@@ -10,6 +10,22 @@ export const protectedRoutes: Routes = {
             pageContainerType: 'contained',
         },
     },
+    '/menus': {
+        key: 'menu-management.menus',
+        authority: [],
+        meta: {
+            pageBackgroundType: 'plain',
+            pageContainerType: 'contained',
+        },
+    },
+    '/settings': {
+        key: 'settings',
+        authority: [],
+        meta: {
+            pageBackgroundType: 'default',
+            pageContainerType: 'contained',
+        },
+    },
 }
 
 export const publicRoutes: Routes = {

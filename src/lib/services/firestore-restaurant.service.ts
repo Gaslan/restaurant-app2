@@ -23,25 +23,29 @@ export async function getRestaurant(id: string): Promise<Restaurant | null> {
             .doc('restaurant')
             .get();
 
-        if (!doc.exists) {
+        const rootDoc = await db.collection(COLLECTION_NAME).doc(id).get();
+        const rootData = rootDoc.exists ? rootDoc.data()! : {};
+
+        if (!doc.exists && !rootDoc.exists) {
             return null;
         }
 
-        const data = doc.data()!;
+        const data = doc.exists ? doc.data()! : {};
 
         return {
-            id: id, // Correctly use the restaurant ID
-            name: data.name,
-            logoUrl: data.logoUrl || null,
-            description: data.description || '',
-            currency: data.currency || 'TRY',
-            phone: data.phone,
-            email: data.email,
-            address: data.address,
-            socialMedia: data.socialMedia || [],
-            openingHours: data.openingHours || [],
-            createdAt: data.createdAt?.toDate() || new Date(),
-            updatedAt: data.updatedAt?.toDate() || new Date(),
+            id: id,
+            name: data.name ?? rootData.name ?? '',
+            logoUrl: data.logoUrl ?? rootData.logoUrl ?? null,
+            description: data.description ?? rootData.description ?? '',
+            currency: data.currency ?? rootData.currency ?? 'TRY',
+            phone: data.phone ?? rootData.phone,
+            email: data.email ?? rootData.email,
+            address: data.address ?? rootData.address,
+            socialMedia: data.socialMedia ?? rootData.socialMedia ?? [],
+            openingHours: data.openingHours ?? rootData.openingHours ?? [],
+            appearance: data.appearance ?? rootData.appearance ?? { imagePosition: 'right' },
+            createdAt: data.createdAt?.toDate?.() || rootData.createdAt?.toDate?.() || new Date(),
+            updatedAt: data.updatedAt?.toDate?.() || rootData.updatedAt?.toDate?.() || new Date(),
         };
     } catch (error) {
         console.error('Error fetching restaurant:', error);
@@ -54,7 +58,7 @@ export async function getRestaurant(id: string): Promise<Restaurant | null> {
  */
 export async function updateRestaurant(
     id: string,
-    data: Partial<Pick<Restaurant, 'name' | 'description' | 'phone' | 'email' | 'address' | 'socialMedia' | 'openingHours' | 'currency'>>
+    data: Partial<Pick<Restaurant, 'name' | 'description' | 'phone' | 'email' | 'address' | 'socialMedia' | 'openingHours' | 'currency' | 'appearance'>>
 ): Promise<Restaurant> {
     const db = getFirestoreDb();
     const docRef = db
@@ -62,38 +66,30 @@ export async function updateRestaurant(
         .doc(id)
         .collection('settings')
         .doc('restaurant');
+    const rootDocRef = db.collection(COLLECTION_NAME).doc(id);
 
     try {
-        const updateData = {
+        const updateData: any = {
             ...data,
             updatedAt: FieldValue.serverTimestamp(),
         };
 
         // Remove undefined fields to avoid Firestore errors
         Object.keys(updateData).forEach(key =>
-            (updateData as any)[key] === undefined && delete (updateData as any)[key]
+            updateData[key] === undefined && delete updateData[key]
         );
 
+        // Update settings/restaurant sub-collection document
         await docRef.set(updateData, { merge: true });
 
-        // Fetch updated data
-        const updatedDoc = await docRef.get();
-        const updatedData = updatedDoc.data()!;
+        // Also merge into root restaurant document to keep them in sync
+        await rootDocRef.set(updateData, { merge: true });
 
-        return {
-            id: id, // Correctly use the restaurant ID
-            name: updatedData.name,
-            logoUrl: updatedData.logoUrl || null,
-            description: updatedData.description || '',
-            currency: updatedData.currency || 'TRY',
-            phone: updatedData.phone,
-            email: updatedData.email,
-            address: updatedData.address,
-            socialMedia: updatedData.socialMedia || [],
-            openingHours: updatedData.openingHours || [],
-            createdAt: updatedData.createdAt?.toDate() || new Date(),
-            updatedAt: updatedData.updatedAt?.toDate() || new Date(),
-        };
+        const updated = await getRestaurant(id);
+        if (!updated) {
+            throw new Error('Failed to retrieve updated restaurant');
+        }
+        return updated;
     } catch (error) {
         console.error('Error updating restaurant:', error);
         throw new Error('Failed to update restaurant settings');

@@ -18,7 +18,7 @@ const navigationConfig: NavigationTree[] = [
         subMenu: [],
     },
     {
-        key: 'menus',
+        key: 'menu-management',
         path: '',
         title: 'Menu Management',
         translateKey: 'nav.collapseMenu.collapseMenu',
@@ -27,7 +27,7 @@ const navigationConfig: NavigationTree[] = [
         authority: [],
         subMenu: [
             {
-                key: 'collapseMenu.item1',
+                key: 'menu-management.menus',
                 path: '/menus',
                 title: 'Menus',
                 translateKey: 'nav.collapseMenu.item1',
@@ -47,6 +47,16 @@ const navigationConfig: NavigationTree[] = [
                 subMenu: [],
             },
         ],
+    },
+    {
+        key: 'settings',
+        path: '/settings',
+        title: 'Settings',
+        translateKey: 'nav.settings',
+        icon: 'settings',
+        type: NAV_ITEM_TYPE_ITEM,
+        authority: [],
+        subMenu: [],
     },
     {
         key: 'groupMenu',

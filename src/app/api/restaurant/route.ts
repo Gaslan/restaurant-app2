@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { updateRestaurant } from '@/lib/services/firestore-restaurant.service';
+import { getRestaurant, updateRestaurant } from '@/lib/services/firestore-restaurant.service';
 import { auth } from "@/lib/auth";
-import { getFirestoreDb } from "@/lib/firebase-admin";
 import { headers } from "next/headers";
 
 // GET /api/restaurant - Get restaurant information
@@ -16,15 +15,13 @@ export async function GET() {
     }
 
     const restaurantId = (session.user as any).restaurantId;
+    const restaurant = await getRestaurant(restaurantId);
 
-    const db = getFirestoreDb();
-    const doc = await db.collection("restaurants").doc(restaurantId).get();
-
-    if (!doc.exists) {
+    if (!restaurant) {
       return NextResponse.json({ error: "Restaurant not found" }, { status: 404 });
     }
 
-    return NextResponse.json(doc.data());
+    return NextResponse.json({ data: restaurant, ...restaurant });
   } catch (error) {
     console.error("Error fetching restaurant:", error);
     return NextResponse.json(
@@ -34,39 +31,27 @@ export async function GET() {
   }
 }
 
-// POST /api/restaurant - Update restaurant information
+// POST /api/restaurant - Update restaurant information (partial allowed)
 export async function POST(request: NextRequest) {
   try {
     const session = await auth.api.getSession({
       headers: await headers()
     });
 
-    if (!session || !session.user || !session.user.restaurantId) {
+    if (!session || !session.user || !(session.user as any).restaurantId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const restaurantId = session.user.restaurantId;
-
+    const restaurantId = (session.user as any).restaurantId;
     const body = await request.json();
 
-    // Basic validation
-    if (!body.name || typeof body.name !== 'string') {
-      return Response.json(
-        {
-          error: 'Invalid request',
-          details: 'Restaurant name is required and must be a string',
-        },
-        { status: 400 }
-      );
-    }
-
     const updated = await updateRestaurant(restaurantId, body);
-    return Response.json({
+    return NextResponse.json({
       data: updated,
       message: 'Restaurant information updated successfully',
     });
   } catch (error) {
-    return Response.json(
+    return NextResponse.json(
       {
         error: 'Failed to update restaurant information',
         details: error instanceof Error ? error.message : 'Unknown error',
@@ -74,4 +59,9 @@ export async function POST(request: NextRequest) {
       { status: 500 }
     );
   }
+}
+
+// PATCH /api/restaurant - Partial update
+export async function PATCH(request: NextRequest) {
+  return POST(request);
 }

@@ -102,6 +102,11 @@ export interface Restaurant {
     // QR Settings
     qrSettings?: QrSettings;
 
+    // Appearance Settings
+    appearance?: {
+        imagePosition?: 'right' | 'left' | 'top';
+    };
+
     createdAt: Date;
     updatedAt: Date;
 }

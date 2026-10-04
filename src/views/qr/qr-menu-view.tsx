@@ -9,23 +9,20 @@ import {
     X,
     QrCode,
     MapPin,
-    Phone,
-    Clock,
-    Globe,
     Info,
-    Flame,
-    Timer,
     ChevronRight,
 } from 'lucide-react';
 import { generateQRCodeSVG } from '@/lib/qr-utils';
 import { QrProductDrawer } from './qr-product-drawer';
+import { QrRestaurantDrawer } from './qr-restaurant-drawer';
 
 interface QrMenuViewProps {
     menu: MenuWithDetails;
     restaurant: Restaurant | null;
+    isLivePreview?: boolean;
 }
 
-export function QrMenuView({ menu, restaurant }: QrMenuViewProps) {
+export function QrMenuView({ menu, restaurant, isLivePreview = false }: QrMenuViewProps) {
     // Active category for pills navigation
     const categories = useMemo(() => {
         return (menu.categories || []).filter(cat => cat.products && cat.products.length > 0);
@@ -220,10 +217,19 @@ export function QrMenuView({ menu, restaurant }: QrMenuViewProps) {
         );
     };
 
+    // Appearance configuration
+    const imagePosition = restaurant?.appearance?.imagePosition || 'right';
+
     return (
-        <div className="min-h-dvh bg-[#e4e4e7] flex items-center justify-center font-sans md:py-6 md:px-4">
-            {/* Phone Mockup Frame on Desktop / Full Screen on Mobile */}
-            <div className="w-full max-w-[420px] h-dvh md:h-[880px] md:max-h-[94dvh] bg-[#F9F9F7] text-[#1C1B19] md:rounded-[28px] md:shadow-2xl overflow-hidden flex flex-col relative border-0 md:border md:border-[#E7E3DA]">
+        <div className={isLivePreview ? "w-full flex items-center justify-center font-sans py-2" : "min-h-dvh bg-[#e4e4e7] flex items-center justify-center font-sans md:py-6 md:px-4"}>
+            {/* Phone Mockup Frame */}
+            <div className={isLivePreview 
+                ? "w-full max-w-[380px] h-[720px] bg-[#F9F9F7] text-[#1C1B19] rounded-[36px] shadow-2xl overflow-hidden flex flex-col relative border-[7px] border-zinc-900 ring-1 ring-zinc-400/50" 
+                : "w-full max-w-[420px] h-dvh md:h-[880px] md:max-h-[94dvh] bg-[#F9F9F7] text-[#1C1B19] md:rounded-[28px] md:shadow-2xl overflow-hidden flex flex-col relative border-0 md:border md:border-[#E7E3DA]"
+            }>
+                {isLivePreview && (
+                    <div className="absolute top-2 left-1/2 -translate-x-1/2 w-24 h-3.5 bg-zinc-900 rounded-full z-30 pointer-events-none" />
+                )}
                 
                 {/* Scrollable Container */}
                 <div
@@ -354,6 +360,125 @@ export function QrMenuView({ menu, restaurant }: QrMenuViewProps) {
                                         .filter((p) => p.active !== false)
                                         .map((product) => {
                                             const hasVariations = product.variations && product.variations.length > 0;
+                                            
+                                            // Top image position layout
+                                            if (imagePosition === 'top') {
+                                                return (
+                                                    <div
+                                                        key={product.id}
+                                                        onClick={() => {
+                                                            setSelectedProduct(product);
+                                                            setSelectedVariationIndex(0);
+                                                        }}
+                                                        className="py-3.5 flex flex-col gap-2.5 cursor-pointer group active:bg-zinc-50 transition-colors"
+                                                    >
+                                                        {product.imageUrl && (
+                                                            <div className="w-full h-44 rounded-xl overflow-hidden bg-zinc-100 border border-[#E7E3DA] flex-shrink-0 shadow-xs">
+                                                                <img
+                                                                    src={product.imageUrl}
+                                                                    alt={product.name}
+                                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                                                    loading="lazy"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                        <div className="w-full min-w-0">
+                                                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                                    <span className="font-semibold text-[14px] text-[#1C1B19] group-hover:text-black leading-snug">
+                                                                        {product.name}
+                                                                    </span>
+                                                                    {product.tags && product.tags.length > 0 && (
+                                                                        <div className="flex items-center gap-1">
+                                                                            {product.tags.slice(0, 2).map(renderTag)}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <div className="text-[13px] font-bold text-[#1C1B19]">
+                                                                    {hasVariations ? (
+                                                                        <div className="flex items-center gap-1.5 flex-wrap text-xs">
+                                                                            {product.variations!.map((v, i) => (
+                                                                                <span key={i} className="inline-flex items-center">
+                                                                                    {i > 0 && <span className="mx-1 text-[#6B6862]">·</span>}
+                                                                                    <span>{formatPrice(v.price)}</span>
+                                                                                </span>
+                                                                            ))}
+                                                                        </div>
+                                                                    ) : (
+                                                                        formatPrice(product.price)
+                                                                    )}
+                                                                </div>
+                                                            </div>
+
+                                                            {product.description && (
+                                                                <p className="text-xs text-[#6B6862] line-clamp-2 mt-1 leading-relaxed">
+                                                                    {product.description}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+
+                                            // Left image position layout
+                                            if (imagePosition === 'left') {
+                                                return (
+                                                    <div
+                                                        key={product.id}
+                                                        onClick={() => {
+                                                            setSelectedProduct(product);
+                                                            setSelectedVariationIndex(0);
+                                                        }}
+                                                        className="py-3.5 flex items-center gap-3 cursor-pointer group active:bg-zinc-50 transition-colors"
+                                                    >
+                                                        {product.imageUrl && (
+                                                            <div className="w-[72px] h-[72px] min-w-[72px] rounded-lg overflow-hidden bg-zinc-100 border border-[#E7E3DA] flex-shrink-0 shadow-xs">
+                                                                <img
+                                                                    src={product.imageUrl}
+                                                                    alt={product.name}
+                                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                                                    loading="lazy"
+                                                                />
+                                                            </div>
+                                                        )}
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                                <span className="font-semibold text-[14px] text-[#1C1B19] group-hover:text-black leading-snug">
+                                                                    {product.name}
+                                                                </span>
+                                                                {product.tags && product.tags.length > 0 && (
+                                                                    <div className="flex items-center gap-1">
+                                                                        {product.tags.slice(0, 2).map(renderTag)}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+
+                                                            {product.description && (
+                                                                <p className="text-xs text-[#6B6862] line-clamp-2 mt-1 leading-relaxed">
+                                                                    {product.description}
+                                                                </p>
+                                                            )}
+
+                                                            <div className="mt-2 text-[13px] font-bold text-[#1C1B19]">
+                                                                {hasVariations ? (
+                                                                    <div className="flex items-center gap-1.5 flex-wrap text-xs">
+                                                                        {product.variations!.map((v, i) => (
+                                                                            <span key={i} className="inline-flex items-center">
+                                                                                {i > 0 && <span className="mx-1 text-[#6B6862]">·</span>}
+                                                                                <span>{formatPrice(v.price)}</span>
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                ) : (
+                                                                    formatPrice(product.price)
+                                                                )}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            }
+
+                                            // Default: Right image position layout
                                             return (
                                                 <div
                                                     key={product.id}
@@ -544,122 +669,34 @@ export function QrMenuView({ menu, restaurant }: QrMenuViewProps) {
                 />
 
 
-                {/* Restaurant Info Modal */}
-                {isInfoModalOpen && restaurant && (
-                    <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end animate-in fade-in duration-200">
-                        <div
-                            className="flex-1"
-                            onClick={() => setIsInfoModalOpen(false)}
-                        />
-                        <div className="bg-white rounded-t-[24px] max-h-[85%] overflow-y-auto p-5 shadow-2xl animate-in slide-in-from-bottom duration-250 border-t border-[#E7E3DA]">
-                            <div className="flex items-center justify-between pb-3 border-b border-[#E7E3DA]">
-                                <h3 className="text-lg font-bold text-[#1C1B19]">
-                                    {restaurant.name}
-                                </h3>
-                                <button
-                                    onClick={() => setIsInfoModalOpen(false)}
-                                    className="p-1 rounded-full text-zinc-400 hover:text-zinc-700 bg-zinc-100 cursor-pointer"
-                                >
-                                    <X className="w-4 h-4" />
-                                </button>
-                            </div>
-
-                            <div className="py-4 space-y-4">
-                                {restaurant.description && (
-                                    <p className="text-xs text-[#6B6862] leading-relaxed">
-                                        {restaurant.description}
-                                    </p>
-                                )}
-
-                                {restaurant.address && (
-                                    <div className="flex items-start gap-3">
-                                        <MapPin className="w-4 h-4 text-[#1C1B19] mt-0.5 flex-shrink-0" />
-                                        <div className="text-xs text-[#1C1B19]">
-                                            <span className="font-semibold block">Adres</span>
-                                            <span className="text-[#6B6862]">{restaurant.address}</span>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {restaurant.phone && (
-                                    <div className="flex items-start gap-3">
-                                        <Phone className="w-4 h-4 text-[#1C1B19] mt-0.5 flex-shrink-0" />
-                                        <div className="text-xs text-[#1C1B19]">
-                                            <span className="font-semibold block">Telefon</span>
-                                            <a
-                                                href={`tel:${restaurant.phone}`}
-                                                className="text-[#1C1B19] underline font-medium"
-                                            >
-                                                {restaurant.phone}
-                                            </a>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {restaurant.openingHours && restaurant.openingHours.length > 0 && (
-                                    <div className="pt-2 border-t border-[#E7E3DA]">
-                                        <div className="flex items-center gap-1.5 text-xs font-semibold text-[#1C1B19] mb-2">
-                                            <Clock className="w-3.5 h-3.5" />
-                                            <span>Çalışma Saatleri</span>
-                                        </div>
-                                        <div className="space-y-1.5 text-xs">
-                                            {restaurant.openingHours.map((h, i) => (
-                                                <div key={i} className="flex justify-between text-[#6B6862]">
-                                                    <span>{h.label}</span>
-                                                    <span className="font-medium text-[#1C1B19]">
-                                                        {h.isOpen ? `${h.openTime} - ${h.closeTime}` : 'Kapalı'}
-                                                    </span>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-
-                                {restaurant.socialMedia && restaurant.socialMedia.length > 0 && (
-                                    <div className="pt-2 border-t border-[#E7E3DA]">
-                                        <span className="text-xs font-semibold text-[#1C1B19] block mb-2">
-                                            Sosyal Medya
-                                        </span>
-                                        <div className="flex flex-wrap gap-2">
-                                            {restaurant.socialMedia.map((sm, i) => (
-                                                <a
-                                                    key={i}
-                                                    href={sm.url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#E7E3DA] text-xs font-medium text-[#1C1B19] hover:bg-zinc-50"
-                                                >
-                                                    <Globe className="w-3.5 h-3.5" />
-                                                    <span className="capitalize">{sm.platform}</span>
-                                                </a>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                )}
+                {/* Restaurant Info Bottom Sheet Drawer */}
+                <QrRestaurantDrawer
+                    isOpen={isInfoModalOpen}
+                    onClose={() => setIsInfoModalOpen(false)}
+                    restaurant={restaurant}
+                />
             </div>
 
             {/* Desktop Floating QR Code Widget (Visible on md+ screens like NordQR) */}
-            <div className="hidden md:flex fixed bottom-6 right-6 z-30 flex-col items-center">
-                <div className="bg-white p-3.5 rounded-2xl shadow-xl border border-zinc-200/90 text-center max-w-[150px] transition-transform hover:scale-105">
-                    {qrSvg ? (
-                        <div
-                            className="w-28 h-28 mx-auto [&>svg]:w-full [&>svg]:h-full"
-                            dangerouslySetInnerHTML={{ __html: qrSvg }}
-                        />
-                    ) : (
-                        <div className="w-28 h-28 bg-zinc-100 rounded-lg flex items-center justify-center">
-                            <QrCode className="w-8 h-8 text-zinc-400 animate-pulse" />
-                        </div>
-                    )}
-                    <p className="text-[11px] font-medium text-[#6B6862] mt-2 leading-tight">
-                        Menüyü telefonunuzda görmek için QR'ı tarayın.
-                    </p>
+            {!isLivePreview && (
+                <div className="hidden md:flex fixed bottom-6 right-6 z-30 flex-col items-center">
+                    <div className="bg-white p-3.5 rounded-2xl shadow-xl border border-zinc-200/90 text-center max-w-[150px] transition-transform hover:scale-105">
+                        {qrSvg ? (
+                            <div
+                                className="w-28 h-28 mx-auto [&>svg]:w-full [&>svg]:h-full"
+                                dangerouslySetInnerHTML={{ __html: qrSvg }}
+                            />
+                        ) : (
+                            <div className="w-28 h-28 bg-zinc-100 rounded-lg flex items-center justify-center">
+                                <QrCode className="w-8 h-8 text-zinc-400 animate-pulse" />
+                            </div>
+                        )}
+                        <p className="text-[11px] font-medium text-[#6B6862] mt-2 leading-tight">
+                            Menüyü telefonunuzda görmek için QR'ı tarayın.
+                        </p>
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     );
 }
