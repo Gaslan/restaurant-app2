@@ -25,10 +25,12 @@ export async function PATCH(
         const { id } = await params;
         const body = await request.json();
         const { searchParams } = new URL(request.url);
-        const menuId = searchParams.get('menuId');
-        const categoryId = searchParams.get('categoryId');
+        const menuId = searchParams.get('menuId') || body.menuId;
+        const categoryId = searchParams.get('categoryId') || body.categoryId;
 
-        const { previousProductId, nextProductId } = body;
+        const previousProductId = body.previousProductId ?? body.beforeId ?? null;
+        const nextProductId = body.nextProductId ?? body.afterId ?? null;
+        const orderedProductIds = body.orderedProductIds ?? null;
 
         if (!menuId || !categoryId) {
             return NextResponse.json(
@@ -42,8 +44,9 @@ export async function PATCH(
             menuId,
             categoryId,
             id,
-            previousProductId || null,
-            nextProductId || null
+            previousProductId,
+            nextProductId,
+            orderedProductIds
         );
 
         if (!updatedProduct) {

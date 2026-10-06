@@ -120,7 +120,7 @@ const PageContainer = (props: PageContainerProps) => {
         pageBackgroundType = 'default',
         children,
         header,
-        footer = true,
+        footer = false,
     } = props
 
     const { pageContainerReassemble } = useLayout()

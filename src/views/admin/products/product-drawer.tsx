@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui';
 import { MultiSelect, type Option } from '@/components/shared/MultiSelect';
 import { Tabs } from '@/components/ui';
 import { Switcher } from '@/components/ui';
+import { ProductImageUpload } from './components/product-image-upload';
 
 import { productSchema, type ProductFormData } from '@/lib/validations';
 import { z } from 'zod';
@@ -447,21 +448,20 @@ export function ProductDrawer({
                                 />
                             </Tabs.TabContent>
 
-                            <Tabs.TabContent value="medya">
+                            <Tabs.TabContent value="medya" className="space-y-4">
                                 <Controller
                                     name="imageUrl"
                                     control={form.control}
                                     render={({ field, fieldState }) => (
                                         <FormItem
-                                            label="Resim URL (Opsiyonel)"
-                                            extra="Ürün görseli için URL"
+                                            label="Ürün Görseli"
+                                            extra="Ürününüz için bir görsel yükleyin."
                                             invalid={Boolean(fieldState.error)}
                                             errorMessage={fieldState.error?.message}
                                         >
-                                            <Input
-                                                placeholder="https://example.com/image.jpg"
-                                                {...field}
-                                                value={field.value || ''}
+                                            <ProductImageUpload
+                                                value={field.value}
+                                                onChange={(url) => field.onChange(url)}
                                             />
                                         </FormItem>
                                     )}

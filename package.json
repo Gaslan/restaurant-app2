@@ -33,6 +33,7 @@
     "better-auth": "^1.4.19",
     "better-auth-firestore": "^1.1.2",
     "classnames": "^2.5.1",
+    "cloudinary": "^2.11.0",
     "d3-dsv": "^3.0.1",
     "d3-fetch": "^3.0.1",
     "d3-scale": "^4.0.2",

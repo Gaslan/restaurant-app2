@@ -44,20 +44,5 @@ export default function Footer({
     pageContainerType = 'contained',
     className,
 }: FooterProps) {
-    return (
-        <footer
-            className={classNames(
-                `footer flex flex-auto items-center h-16 ${PAGE_CONTAINER_GUTTER_X}`,
-                className,
-            )}
-        >
-            {pageContainerType === 'contained' ? (
-                <Container>
-                    <FooterContent />
-                </Container>
-            ) : (
-                <FooterContent />
-            )}
-        </footer>
-    )
+    return null
 }

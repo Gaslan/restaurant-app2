@@ -26,6 +26,7 @@ import { CSS } from '@dnd-kit/utilities';
 import type { CategoryWithProducts, Product } from '@/types';
 import type { ProductFormData } from '@/lib/validations';
 import { apiGet, apiPost, apiPatch, apiDelete } from '@/lib/api';
+import { comparePositions } from '@/lib/utils';
 
 import { Button, Input, Select, Badge } from '@/components/ui';
 import {
@@ -250,7 +251,13 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                 (statusFilter.value === 'unavailable' && !product.available);
 
             return matchesSearch && matchesStatus;
-        }).sort((a, b) => a.position.localeCompare(b.position));
+        }).sort((a, b) => {
+            const cmp = comparePositions(a.position, b.position);
+            if (cmp !== 0) return cmp;
+            const timeA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
+            const timeB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
+            return timeA - timeB;
+        });
     }, [category, searchQuery, statusFilter]);
 
     const displayProducts = optimisticProducts || filteredProducts;
@@ -294,33 +301,38 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
             return;
         }
 
-        const oldIndex = filteredProducts.findIndex((p) => p.id === active.id);
-        const newIndex = filteredProducts.findIndex((p) => p.id === over.id);
+        const oldIndex = displayProducts.findIndex((p) => p.id === active.id);
+        const newIndex = displayProducts.findIndex((p) => p.id === over.id);
 
         if (oldIndex === -1 || newIndex === -1) {
             return;
         }
 
-        const reorderedFiltered = [...filteredProducts];
-        const [moved] = reorderedFiltered.splice(oldIndex, 1);
-        reorderedFiltered.splice(newIndex, 0, moved);
-        setOptimisticProducts(reorderedFiltered);
+        const reorderedList = [...displayProducts];
+        const [moved] = reorderedList.splice(oldIndex, 1);
+        reorderedList.splice(newIndex, 0, moved);
+        setOptimisticProducts(reorderedList);
 
         const reorderedProducts = [...category.products];
         const allOldIndex = reorderedProducts.findIndex((p) => p.id === active.id);
         const allNewIndex = reorderedProducts.findIndex((p) => p.id === over.id);
-        const [movedProduct] = reorderedProducts.splice(allOldIndex, 1);
-        reorderedProducts.splice(allNewIndex, 0, movedProduct);
-
-        setCategory({
-            ...category,
-            products: reorderedProducts,
-        });
+        if (allOldIndex !== -1 && allNewIndex !== -1) {
+            const [movedProduct] = reorderedProducts.splice(allOldIndex, 1);
+            reorderedProducts.splice(allNewIndex, 0, movedProduct);
+            setCategory({
+                ...category,
+                products: reorderedProducts,
+            });
+        }
 
         try {
+            const isFullList = searchQuery === '' && statusFilter.value === 'all';
             await apiPatch(`/api/products/${active.id}/reorder?menuId=${menuId}&categoryId=${categoryId}`, {
-                previousProductId: newIndex > 0 ? reorderedFiltered[newIndex - 1].id : null,
-                nextProductId: newIndex < reorderedFiltered.length - 1 ? reorderedFiltered[newIndex + 1].id : null,
+                previousProductId: newIndex > 0 ? reorderedList[newIndex - 1].id : null,
+                nextProductId: newIndex < reorderedList.length - 1 ? reorderedList[newIndex + 1].id : null,
+                orderedProductIds: isFullList
+                    ? reorderedList.map((p) => p.id)
+                    : reorderedProducts.map((p) => p.id),
             });
             toast.success('Ürün sırası güncellendi');
             await fetchData();
@@ -396,7 +408,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                     <AdaptiveCard>
                         <div className="mb-4 flex flex-col md:flex-row gap-3 justify-between items-center">
                             <p className="text-sm text-muted-foreground m-0">
-                                {displayProducts.length} ürün listeleniyor. Sıralamayı değiştirmek için <GripVertical className="inline w-4 h-4 mx-1" /> simgesinden sürükleyin.
+                                {displayProducts.length} ürün listeleniyor.
                             </p>
                             <div className="flex items-center gap-2 w-full md:w-auto">
                                 <div className="relative w-full md:w-64">
@@ -406,7 +418,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         className="pl-9 bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
                                     />
-                                    <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Search className="absolute left-3 top-4 h-4 w-4 text-muted-foreground" />
                                 </div>
                                 <Select
                                     options={[

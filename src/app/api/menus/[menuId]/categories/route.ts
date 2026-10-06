@@ -84,9 +84,11 @@ export async function POST(
             name: body.name,
             description: body.description || null,
             imageUrl: body.imageUrl || null,
+            afterCategoryId: body.afterCategoryId || null,
+            position: body.position || null,
         };
 
-        // Use Firestore - position auto-generated
+        // Use Firestore - position auto-generated or calculated after target
         const newCategory = await firestoreCategoryService.createCategory(
             restaurantId,
             menuId,

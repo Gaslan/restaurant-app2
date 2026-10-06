@@ -2,6 +2,7 @@
 import ThemeProvider from '@/components/template/Theme/ThemeProvider'
 import pageMetaConfig from '@/configs/page-meta.config'
 import NavigationProvider from '@/components/template/Navigation/NavigationProvider'
+import Toaster from '@/components/template/Toaster'
 import { getNavigation } from '@/server/actions/navigation/getNavigation'
 import { getTheme } from '@/server/actions/theme'
 import type { ReactNode } from 'react'
@@ -31,6 +32,7 @@ export default async function RootLayout({
                     <NavigationProvider navigationTree={navigationTree}>
                         {children}
                     </NavigationProvider>
+                    <Toaster />
                 </ThemeProvider>
             </body>
         </html>

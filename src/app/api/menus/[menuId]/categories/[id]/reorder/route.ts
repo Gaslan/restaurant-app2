@@ -21,14 +21,15 @@ export async function PATCH(
 
         const { menuId, id } = await params;
         const body = await request.json();
-        const { beforeId, afterId } = body;
+        const { beforeId, afterId, orderedCategoryIds } = body;
 
         const updated = await firestoreCategoryService.reorderCategory(
             restaurantId,
             menuId,
             id,
             beforeId,
-            afterId
+            afterId,
+            orderedCategoryIds
         );
 
         if (!updated) {

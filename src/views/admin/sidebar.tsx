@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Settings, Menu as MenuIcon, ChevronRight, Store, QrCode, Smartphone, Plus } from 'lucide-react';
+import { Home, Settings, Menu as MenuIcon, ChevronRight, Store, QrCode, Smartphone, Plus, LayoutList } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 import { authClient } from '@/lib/auth-client';
@@ -33,6 +33,11 @@ const navigationItems: NavigationItem[] = [
                 title: 'Menüler',
                 href: '/menus',
                 icon: MenuIcon,
+            },
+            {
+                title: 'Menü 2',
+                href: '/menu2',
+                icon: LayoutList,
             },
             {
                 title: 'Fiyat Editörü',

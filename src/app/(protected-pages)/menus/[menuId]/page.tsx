@@ -288,6 +288,7 @@ export default function MenuDetailPage({ params }: MenuDetailPageProps) {
             await apiPatch(`/api/menus/${menu.id}/categories/${active.id}/reorder`, {
                 beforeId: newIndex > 0 ? reorderedCategories[newIndex - 1].id : null,
                 afterId: newIndex < reorderedCategories.length - 1 ? reorderedCategories[newIndex + 1].id : null,
+                orderedCategoryIds: reorderedCategories.map(c => c.id),
             });
             toast.success('Kategori sırası güncellendi');
             // Refresh to get updated positions from backend

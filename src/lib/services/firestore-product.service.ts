@@ -1,6 +1,32 @@
 import { getFirestoreDb } from '@/lib/firebase-admin';
 import { Product } from '@/types';
-import { generateKeyBetween } from 'fractional-indexing';
+import { generateKeyBetween, generateNKeysBetween } from 'fractional-indexing';
+import { comparePositions } from '@/lib/utils';
+
+/**
+ * Helper to map Firestore product document data to Product type
+ */
+function mapProductDoc(id: string, data: any): Product {
+    return {
+        id,
+        name: data.name,
+        description: data.description || null,
+        price: data.price,
+        imageUrl: data.imageUrl || null,
+        position: typeof data.position === 'string' ? data.position : 'a0',
+        categoryId: data.categoryId,
+        tags: data.tags || [],
+        allergens: data.allergens || [],
+        available: data.available ?? true,
+        active: data.active ?? true,
+        presence: data.presence,
+        variations: data.variations || [],
+        calories: data.calories || 0,
+        cookingTime: data.cookingTime || 0,
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : (data.createdAt instanceof Date ? data.createdAt : new Date()),
+        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : (data.updatedAt instanceof Date ? data.updatedAt : new Date()),
+    };
+}
 
 /**
  * Get all products for a category (ordered by position)
@@ -22,32 +48,21 @@ export async function getProducts(
             .doc(categoryId)
             .collection('products');
 
-        const snapshot = await productsRef
-            .orderBy('position', 'asc')
-            .get();
+        const snapshot = await productsRef.get();
 
         const products: Product[] = [];
         snapshot.forEach((doc) => {
-            const data = doc.data();
-            products.push({
-                id: doc.id,
-                name: data.name,
-                description: data.description || null,
-                price: data.price,
-                imageUrl: data.imageUrl || null,
-                position: data.position,
-                categoryId: data.categoryId,
-                tags: data.tags || [],
-                allergens: data.allergens || [],
-                available: data.available ?? true,
-                active: data.active ?? true,
-                presence: data.presence,
-                variations: data.variations || [],
-                calories: data.calories || 0,
-                cookingTime: data.cookingTime || 0,
-                createdAt: data.createdAt?.toDate() || new Date(),
-                updatedAt: data.updatedAt?.toDate() || new Date(),
-            });
+            products.push(mapProductDoc(doc.id, doc.data()));
+        });
+
+        // Sort by position ascending (fractional index string comparison),
+        // fallback to createdAt if position is identical or missing
+        products.sort((a, b) => {
+            const cmp = comparePositions(a.position, b.position);
+            if (cmp !== 0) return cmp;
+            const timeA = a.createdAt instanceof Date ? a.createdAt.getTime() : 0;
+            const timeB = b.createdAt instanceof Date ? b.createdAt.getTime() : 0;
+            return timeA - timeB;
         });
 
         return products;
@@ -167,18 +182,24 @@ export async function createProduct(
             .doc(categoryId)
             .collection('products');
 
-        // Get existing products to calculate position
-        const existingProducts = await productsRef
-            .orderBy('position', 'asc')
-            .get();
+        // Get existing products to calculate next position safely
+        const allProducts = await productsRef.get();
 
-        // Generate position for new product (append to end)
         let position: string;
-        if (existingProducts.empty) {
+        if (allProducts.empty) {
             position = generateKeyBetween(null, null); // First product
         } else {
-            const lastProduct = existingProducts.docs[existingProducts.docs.length - 1].data();
-            position = generateKeyBetween(lastProduct.position, null);
+            const validPositions = allProducts.docs
+                .map((d) => d.data().position)
+                .filter((pos): pos is string => typeof pos === 'string' && pos.length > 0)
+                .sort();
+
+            if (validPositions.length === 0) {
+                position = generateKeyBetween(null, null);
+            } else {
+                const maxPosition = validPositions[validPositions.length - 1];
+                position = generateKeyBetween(maxPosition, null);
+            }
         }
 
         const now = new Date();
@@ -231,27 +252,7 @@ export async function updateProduct(
         });
 
         const updated = await productRef.get();
-        const updatedData = updated.data()!;
-
-        return {
-            id: productId,
-            name: updatedData.name,
-            description: updatedData.description || null,
-            price: updatedData.price,
-            imageUrl: updatedData.imageUrl || null,
-            position: updatedData.position,
-            categoryId: updatedData.categoryId,
-            tags: updatedData.tags || [],
-            allergens: updatedData.allergens || [],
-            available: updatedData.available ?? true,
-            active: updatedData.active ?? true,
-            presence: updatedData.presence,
-            variations: updatedData.variations || [],
-            calories: updatedData.calories || 0,
-            cookingTime: updatedData.cookingTime || 0,
-            createdAt: updatedData.createdAt?.toDate() || new Date(),
-            updatedAt: updatedData.updatedAt?.toDate() || new Date(),
-        };
+        return mapProductDoc(productId, updated.data()!);
     } catch (error) {
         console.error('Error updating product in Firestore:', error);
         throw new Error('Failed to update product');
@@ -287,7 +288,7 @@ export async function deleteProduct(
 }
 
 /**
- * Reorder a product using fractional indexing
+ * Reorder a product using fractional indexing with automatic rebalance fallback
  */
 export async function reorderProduct(
     restaurantId: string,
@@ -295,7 +296,8 @@ export async function reorderProduct(
     categoryId: string,
     productId: string,
     beforeId: string | null,
-    afterId: string | null
+    afterId: string | null,
+    orderedProductIds?: string[] | null
 ): Promise<Product> {
     const db = getFirestoreDb();
 
@@ -309,6 +311,12 @@ export async function reorderProduct(
             .doc(categoryId)
             .collection('products');
 
+        // Check if target product exists
+        const targetDoc = await productsRef.doc(productId).get();
+        if (!targetDoc.exists) {
+            throw new Error(`Product not found: ${productId}`);
+        }
+
         // Get before and after positions
         let beforePosition: string | null = null;
         let afterPosition: string | null = null;
@@ -316,49 +324,119 @@ export async function reorderProduct(
         if (beforeId) {
             const beforeDoc = await productsRef.doc(beforeId).get();
             if (beforeDoc.exists) {
-                beforePosition = beforeDoc.data()!.position;
+                const data = beforeDoc.data();
+                if (data && typeof data.position === 'string') {
+                    beforePosition = data.position;
+                }
             }
         }
 
         if (afterId) {
             const afterDoc = await productsRef.doc(afterId).get();
             if (afterDoc.exists) {
-                afterPosition = afterDoc.data()!.position;
+                const data = afterDoc.data();
+                if (data && typeof data.position === 'string') {
+                    afterPosition = data.position;
+                }
             }
         }
 
-        // Calculate new position
-        const newPosition = generateKeyBetween(beforePosition, afterPosition);
+        let newPosition: string | null = null;
 
-        // Update product
-        const productRef = productsRef.doc(productId);
-        await productRef.update({
-            position: newPosition,
-            updatedAt: new Date(),
-        });
+        // Try single fractional indexing key generation if conditions are strictly valid
+        const canTryFractional =
+            Boolean(beforePosition || afterPosition) &&
+            (!beforePosition || !afterPosition || beforePosition < afterPosition) &&
+            beforePosition !== afterPosition;
 
-        // Return updated product
-        const updated = await productRef.get();
-        const data = updated.data()!;
+        if (canTryFractional) {
+            try {
+                newPosition = generateKeyBetween(beforePosition, afterPosition);
+            } catch (err) {
+                console.warn('generateKeyBetween failed, falling back to full rebalance:', err);
+                newPosition = null;
+            }
+        } else if (!beforeId && !afterId) {
+            newPosition = generateKeyBetween(null, null);
+        }
 
-        return {
-            id: productId,
-            name: data.name,
-            description: data.description || null,
-            price: data.price,
-            imageUrl: data.imageUrl || null,
-            position: data.position,
-            categoryId: data.categoryId,
-            tags: data.tags || [],
-            available: data.available ?? true,
-            active: data.active ?? true,
-            presence: data.presence,
-            variations: data.variations || [],
-            calories: data.calories || 0,
-            cookingTime: data.cookingTime || 0,
-            createdAt: data.createdAt?.toDate() || new Date(),
-            updatedAt: data.updatedAt?.toDate() || new Date(),
-        };
+        if (newPosition) {
+            // Update single product
+            const productRef = productsRef.doc(productId);
+            await productRef.update({
+                position: newPosition,
+                updatedAt: new Date(),
+            });
+
+            const updated = await productRef.get();
+            return mapProductDoc(productId, updated.data()!);
+        }
+
+        // --- FALLBACK REBALANCE ---
+        // If before/after positions collide (e.g. both 'a0'), are inverted, or fractional indexing threw,
+        // we rebalance all products in the category using clean keys.
+        console.log(`Rebalancing positions for category ${categoryId} due to colliding or invalid positions`);
+
+        const allDocsSnapshot = await productsRef.get();
+        const docsMap = new Map<string, FirebaseFirestore.QueryDocumentSnapshot>();
+        allDocsSnapshot.forEach(doc => docsMap.set(doc.id, doc));
+
+        let finalOrderIds: string[] = [];
+
+        if (orderedProductIds && orderedProductIds.length > 0) {
+            const seen = new Set<string>();
+            for (const id of orderedProductIds) {
+                if (docsMap.has(id)) {
+                    finalOrderIds.push(id);
+                    seen.add(id);
+                }
+            }
+            // Append any products in category that were not in orderedProductIds
+            for (const id of docsMap.keys()) {
+                if (!seen.has(id)) {
+                    finalOrderIds.push(id);
+                }
+            }
+        } else {
+            // Deduce order from existing positions, placing productId between beforeId and afterId
+            const otherDocs = allDocsSnapshot.docs.filter(d => d.id !== productId);
+            otherDocs.sort((a, b) => {
+                const cmp = comparePositions(a.data().position, b.data().position);
+                if (cmp !== 0) return cmp;
+                return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0);
+            });
+
+            const otherIds = otherDocs.map(d => d.id);
+            if (beforeId && otherIds.includes(beforeId)) {
+                const bIdx = otherIds.indexOf(beforeId);
+                otherIds.splice(bIdx + 1, 0, productId);
+                finalOrderIds = otherIds;
+            } else if (afterId && otherIds.includes(afterId)) {
+                const aIdx = otherIds.indexOf(afterId);
+                otherIds.splice(aIdx, 0, productId);
+                finalOrderIds = otherIds;
+            } else {
+                finalOrderIds = [productId, ...otherIds];
+            }
+        }
+
+        const keys = generateNKeysBetween(null, null, finalOrderIds.length);
+        const batch = db.batch();
+        const now = new Date();
+
+        for (let i = 0; i < finalOrderIds.length; i++) {
+            const id = finalOrderIds[i];
+            const docRef = productsRef.doc(id);
+            batch.update(docRef, {
+                position: keys[i],
+                updatedAt: now,
+            });
+        }
+
+        await batch.commit();
+
+        const updatedDoc = await productsRef.doc(productId).get();
+        return mapProductDoc(productId, updatedDoc.data()!);
     } catch (error) {
         console.error('Error reordering product in Firestore:', error);
         throw new Error('Failed to reorder product');

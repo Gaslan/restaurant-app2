@@ -18,6 +18,14 @@ export const protectedRoutes: Routes = {
             pageContainerType: 'contained',
         },
     },
+    '/menu2': {
+        key: 'menu-management.menu2',
+        authority: [],
+        meta: {
+            pageBackgroundType: 'plain',
+            pageContainerType: 'default',
+        },
+    },
     '/settings': {
         key: 'settings',
         authority: [],
