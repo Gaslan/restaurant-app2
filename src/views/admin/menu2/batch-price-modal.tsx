@@ -148,7 +148,7 @@ export function BatchPriceModal({
                                 )}
                             >
                                 <Coins className="h-4 w-4" />
-                                <span>Sabit Miktar ({currency})</span>
+                                <span>Sabit Miktar</span>
                             </button>
                         </div>
                     </div>
@@ -156,7 +156,7 @@ export function BatchPriceModal({
                     {/* 3. Miktar / Değer Girişi */}
                     <div>
                         <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                            {changeType === 'percentage' ? 'Yüzde Oranı (%)' : `Miktar (${currency})`}
+                            {changeType === 'percentage' ? 'Yüzde Oranı (%)' : 'Miktar'}
                         </label>
                         <Input
                             type="number"

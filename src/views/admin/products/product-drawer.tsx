@@ -245,7 +245,7 @@ export function ProductDrawer({
                                 <Tabs.TabNav value="genel">Genel</Tabs.TabNav>
                                 <Tabs.TabNav value="ozellikler">Özellikler</Tabs.TabNav>
                                 <Tabs.TabNav value="medya">Medya</Tabs.TabNav>
-                                <Tabs.TabNav value="fiyat">Fiyat & Varyasyon</Tabs.TabNav>
+                                <Tabs.TabNav value="fiyat">Fiyat</Tabs.TabNav>
                                 <Tabs.TabNav value="gorunurluk">Görünürlük</Tabs.TabNav>
                             </Tabs.TabList>
 
