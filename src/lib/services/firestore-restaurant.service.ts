@@ -1,5 +1,5 @@
 import { getFirestoreDb } from '../firebase-admin';
-import type { Restaurant, QrSettings, QrMenuSettings } from '@/types';
+import type { Restaurant, QrSettings, QrMenuSettings, Currency } from '@/types';
 import { FieldValue } from 'firebase-admin/firestore';
 
 /**
@@ -240,5 +240,93 @@ export async function updateQrMenuSettings(id: string, data: Partial<QrMenuSetti
     } catch (error) {
         console.error('Error updating QR Menu settings:', error);
         throw new Error('Failed to update QR Menu settings');
+    }
+}
+
+/**
+ * Create a new restaurant with default configuration and subcollections
+ */
+export async function createRestaurant(params: {
+    name: string;
+    ownerId?: string;
+    email?: string;
+    phone?: string;
+    currency?: Currency;
+    description?: string;
+}): Promise<Restaurant> {
+    const db = getFirestoreDb();
+    const restaurantRef = db.collection(COLLECTION_NAME).doc();
+    const restaurantId = restaurantRef.id;
+
+    const baseData = {
+        id: restaurantId,
+        name: params.name.trim(),
+        ownerId: params.ownerId || null,
+        logoUrl: null,
+        description: params.description || '',
+        currency: params.currency || 'TRY',
+        phone: params.phone || '',
+        email: params.email || '',
+        address: '',
+        socialMedia: [],
+        openingHours: [],
+        appearance: { imagePosition: 'right' as const },
+        createdAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
+    };
+
+    try {
+        const batch = db.batch();
+
+        // 1. Root restaurant document
+        batch.set(restaurantRef, baseData);
+
+        // 2. Settings - Restaurant details
+        const settingsRestaurantRef = restaurantRef.collection('settings').doc('restaurant');
+        batch.set(settingsRestaurantRef, baseData);
+
+        // 3. Settings - QR Code defaults
+        const settingsQrRef = restaurantRef.collection('settings').doc('qr-code');
+        batch.set(settingsQrRef, {
+            backgroundColor: '#ffffff',
+            foregroundColor: '#000000',
+            text: '',
+            textPosition: 'bottom',
+            updatedAt: FieldValue.serverTimestamp(),
+        });
+
+        // 4. Settings - QR Menu defaults
+        const settingsQrMenuRef = restaurantRef.collection('settings').doc('qr-menu');
+        batch.set(settingsQrMenuRef, {
+            landing: {
+                backgroundColor: '#ffffff',
+                textColor: '#000000',
+                fontFamily: 'Inter',
+            },
+            menu: {},
+            product: {},
+            updatedAt: FieldValue.serverTimestamp(),
+        });
+
+        await batch.commit();
+
+        return {
+            id: restaurantId,
+            name: baseData.name,
+            logoUrl: null,
+            description: baseData.description,
+            currency: baseData.currency as Currency,
+            phone: baseData.phone,
+            email: baseData.email,
+            address: '',
+            socialMedia: [],
+            openingHours: [],
+            appearance: { imagePosition: 'right' },
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        };
+    } catch (error) {
+        console.error('Error creating restaurant:', error);
+        throw new Error('Failed to create restaurant');
     }
 }

@@ -34,6 +34,15 @@ export const protectedRoutes: Routes = {
             pageContainerType: 'contained',
         },
     },
+    '/onboarding': {
+        key: 'onboarding',
+        authority: [],
+        meta: {
+            layout: 'blank',
+            pageBackgroundType: 'plain',
+            pageContainerType: 'contained',
+        },
+    },
 }
 
 export const publicRoutes: Routes = {

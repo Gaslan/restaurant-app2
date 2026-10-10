@@ -81,7 +81,7 @@ export function AdminSidebar() {
     return (
         <div className="flex h-full flex-col gap-2">
             <div className="flex h-14 items-center border-b px-4 lg:h-15 lg:px-6">
-                <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+                <Link href="/home" className="flex items-center gap-2 font-semibold">
                     <MenuIcon className="h-6 w-6" />
                     <span>Restoran Yönetim</span>
                 </Link>
@@ -164,7 +164,7 @@ export function AdminSidebar() {
                     </div>
                 </div>
                 <button
-                    onClick={() => authClient.signOut({ fetchOptions: { onSuccess: () => { window.location.href = '/login'; } } })}
+                    onClick={() => authClient.signOut({ fetchOptions: { onSuccess: () => { window.location.href = '/sign-in'; } } })}
                     className="w-full text-left px-4 py-2 text-sm font-medium text-muted-foreground hover:text-destructive transition-colors rounded-md hover:bg-muted"
                 >
                     Güvenli Çıkış Yap
