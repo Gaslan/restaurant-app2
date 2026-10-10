@@ -3,14 +3,10 @@
 import { useState, useEffect } from 'react';
 import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
-
 import { Button, Drawer, Input, FormContainer, FormItem } from '@/components/ui';
 import { Controller } from 'react-hook-form';
 import { Checkbox } from '@/components/ui';
-import { Badge } from '@/components/ui';
 import { MultiSelect, type Option } from '@/components/shared/MultiSelect';
-import { Tabs } from '@/components/ui';
 import { Switcher } from '@/components/ui';
 import { ProductImageUpload } from './components/product-image-upload';
 
@@ -100,12 +96,9 @@ export function ProductDrawer({
         name: 'variations',
     });
 
-    const [activeTab, setActiveTab] = useState("genel");
-
     // Reset form when product changes
     useEffect(() => {
         if (open) {
-            setActiveTab("genel");
             const availabilityHours = daysOfWeek.map(day => {
                 const times = product?.presence?.[day.value];
                 // If presence is undefined, default to open. If times exists, check if it has start/end.
@@ -239,499 +232,478 @@ export function ProductDrawer({
         >
             <div className="flex-1 overflow-y-auto p-0.5">
                 <FormContainer>
-                    <form id="product-form" onSubmit={form.handleSubmit(onSubmit, (errors) => console.error("Form errors:", errors))} className="space-y-4">
-                        <Tabs defaultValue={activeTab} onChange={setActiveTab} className="w-full">
-                            <Tabs.TabList className="grid w-full grid-cols-5 mb-4">
-                                <Tabs.TabNav value="genel">Genel</Tabs.TabNav>
-                                <Tabs.TabNav value="ozellikler">Özellikler</Tabs.TabNav>
-                                <Tabs.TabNav value="medya">Medya</Tabs.TabNav>
-                                <Tabs.TabNav value="fiyat">Fiyat</Tabs.TabNav>
-                                <Tabs.TabNav value="gorunurluk">Görünürlük</Tabs.TabNav>
-                            </Tabs.TabList>
+                    <form id="product-form" onSubmit={form.handleSubmit(onSubmit, (errors) => console.error("Form errors:", errors))} className="space-y-8 pb-6">
+                        {/* 1. Genel */}
+                        <div className="space-y-4">
+                            <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
+                                <h3 className="text-lg font-semibold text-foreground">Genel</h3>
+                            </div>
 
-                            <Tabs.TabContent value="genel" className="space-y-4">
-                                <Controller
-                                    name="name"
-                                    control={form.control}
-                                    render={({ field, fieldState }) => (
-                                        <FormItem
-                                            label="Ürün Adı"
-                                            invalid={Boolean(fieldState.error)}
-                                            errorMessage={fieldState.error?.message}
-                                        >
-                                            <Input placeholder="Mercimek Çorbası" {...field} />
-                                        </FormItem>
-                                    )}
-                                />
+                            <Controller
+                                name="name"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <FormItem
+                                        label="Ürün Adı"
+                                        invalid={Boolean(fieldState.error)}
+                                        errorMessage={fieldState.error?.message}
+                                    >
+                                        <Input placeholder="Mercimek Çorbası" {...field} />
+                                    </FormItem>
+                                )}
+                            />
 
-                                <Controller
-                                    name="description"
-                                    control={form.control}
-                                    render={({ field, fieldState }) => (
-                                        <FormItem
-                                            label="Açıklama (Opsiyonel)"
-                                            invalid={Boolean(fieldState.error)}
-                                            errorMessage={fieldState.error?.message}
-                                        >
-                                            <Input
-                                                textArea
-                                                placeholder="Geleneksel kırmızı mercimek çorbası"
-                                                {...field}
-                                                value={field.value || ''}
-                                            />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <div className="space-y-4 pt-2">
-                                    <Controller
-                                        name="available"
-                                        control={form.control}
-                                        render={({ field }) => (
-                                            <div className="flex flex-row items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                                                <div className="space-y-0.5 pr-4">
-                                                    <div className="font-semibold text-foreground text-sm">
-                                                        Müsaitlik Durumu
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        Ürün stokta varsa açık konuma getirin.
-                                                    </p>
-                                                </div>
-                                                <Switcher
-                                                    className="shrink-0"
-                                                    checked={field.value}
-                                                    onChange={(checked: boolean) => field.onChange(checked)}
-                                                />
-                                            </div>
-                                        )}
-                                    />
-
-                                    <Controller
-                                        name="active"
-                                        control={form.control}
-                                        render={({ field }) => (
-                                            <div className="flex flex-row items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 p-4">
-                                                <div className="space-y-0.5 pr-4">
-                                                    <div className="font-semibold text-foreground text-sm">
-                                                        Görünürlük
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        Ürünün menüde görünmesini istiyorsanız açık konuma getirin.
-                                                    </p>
-                                                    <span
-                                                        className="text-primary hover:underline cursor-pointer text-xs block pt-0.5"
-                                                        onClick={() => setActiveTab("gorunurluk")}
-                                                    >
-                                                        Detaylı görünürlük ayarları için tıklayın
-                                                    </span>
-                                                </div>
-                                                <Switcher
-                                                    className="shrink-0"
-                                                    checked={field.value}
-                                                    onChange={(checked: boolean) => field.onChange(checked)}
-                                                />
-                                            </div>
-                                        )}
-                                    />
-                                </div>
-                            </Tabs.TabContent>
-
-                            <Tabs.TabContent value="ozellikler" className="space-y-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                    <Controller
-                                        name="cookingTime"
-                                        control={form.control}
-                                        render={({ field, fieldState }) => (
-                                            <FormItem
-                                                label="Pişirme Süresi (dk)"
-                                                invalid={Boolean(fieldState.error)}
-                                                errorMessage={fieldState.error?.message}
-                                            >
-                                                <Input
-                                                    type="number"
-                                                    placeholder="20"
-                                                    {...field}
-                                                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                                                />
-                                            </FormItem>
-                                        )}
-                                    />
-
-                                    <Controller
-                                        name="calories"
-                                        control={form.control}
-                                        render={({ field, fieldState }) => (
-                                            <FormItem
-                                                label="Kalori (kcal)"
-                                                invalid={Boolean(fieldState.error)}
-                                                errorMessage={fieldState.error?.message}
-                                            >
-                                                <Input
-                                                    type="number"
-                                                    placeholder="350"
-                                                    {...field}
-                                                    onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                                                />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </div>
-
-                                <Controller
-                                    name="allergens"
-                                    control={form.control}
-                                    render={({ field, fieldState }) => (
-                                        <FormItem
-                                            label="İçerik Uyarıları"
-                                            extra="Ürünün içerdiği alerjenleri veya uyarıları seçin."
-                                            invalid={Boolean(fieldState.error)}
-                                            errorMessage={fieldState.error?.message}
-                                        >
-                                            <MultiSelect
-                                                options={allergenOptions}
-                                                value={field.value || []}
-                                                onChange={field.onChange}
-                                                placeholder="İçerik uyarılarını seçin..."
-                                            />
-                                        </FormItem>
-                                    )}
-                                />
-
-                                <Controller
-                                    name="tags"
-                                    control={form.control}
-                                    render={() => (
-                                        <FormItem
-                                            label="Etiketler"
-                                            extra="Ürün için uygun etiketleri seçin"
-                                        >
-                                            <div className="grid grid-cols-2 gap-3 mt-2">
-                                                {availableTags.map((tag) => {
-                                                    const config = TAG_CONFIG[tag];
-                                                    return (
-                                                        <Controller
-                                                            key={tag}
-                                                            name="tags"
-                                                            control={form.control}
-                                                            render={({ field }) => {
-                                                                return (
-                                                                    <div className="flex flex-row items-center space-x-3 space-y-0 mb-2">
-                                                                        <Checkbox
-                                                                            checked={field.value?.includes(tag)}
-                                                                            onChange={(val, e) => {
-                                                                                const checked = e.target.checked;
-                                                                                const currentTags = field.value || [];
-                                                                                return checked
-                                                                                    ? field.onChange([...currentTags, tag])
-                                                                                    : field.onChange(
-                                                                                        currentTags.filter((value: string) => value !== tag)
-                                                                                    );
-                                                                            }}
-                                                                        />
-                                                                        <label className="font-normal cursor-pointer text-sm">
-                                                                            {/* <Badge variant="outline" className={`${config.color} border`}> */}
-                                                                            <span>
-                                                                                <span className="mr-1">{config.icon}</span>
-                                                                                {config.label}
-                                                                            </span>
-                                                                            {/* </Badge> */}
-                                                                        </label>
-                                                                    </div>
-                                                                );
-                                                            }}
-                                                        />
-                                                    );
-                                                })}
-                                            </div>
-                                        </FormItem>
-                                    )}
-                                />
-                            </Tabs.TabContent>
-
-                            <Tabs.TabContent value="medya" className="space-y-4">
-                                <Controller
-                                    name="imageUrl"
-                                    control={form.control}
-                                    render={({ field, fieldState }) => (
-                                        <FormItem
-                                            label="Ürün Görseli"
-                                            extra="Ürününüz için bir görsel yükleyin."
-                                            invalid={Boolean(fieldState.error)}
-                                            errorMessage={fieldState.error?.message}
-                                        >
-                                            <ProductImageUpload
-                                                value={field.value}
-                                                onChange={(url) => field.onChange(url)}
-                                            />
-                                        </FormItem>
-                                    )}
-                                />
-                            </Tabs.TabContent>
-
-                            <Tabs.TabContent value="fiyat">
-                                <div className="space-y-6">
-                                    <div className="grid grid-cols-1 gap-4">
-                                        <Controller
-                                            name="price"
-                                            control={form.control}
-                                            render={({ field, fieldState }) => (
-                                                <FormItem
-                                                    label="Fiyat"
-                                                    invalid={Boolean(fieldState.error)}
-                                                    errorMessage={fieldState.error?.message}
-                                                >
-                                                    <Input
-                                                        type="number"
-                                                        step="0.01"
-                                                        placeholder="45.00"
-                                                        {...field}
-                                                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                                                    />
-                                                </FormItem>
-                                            )}
+                            <Controller
+                                name="description"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <FormItem
+                                        label="Açıklama (Opsiyonel)"
+                                        invalid={Boolean(fieldState.error)}
+                                        errorMessage={fieldState.error?.message}
+                                    >
+                                        <Input
+                                            textArea
+                                            placeholder="Geleneksel kırmızı mercimek çorbası"
+                                            {...field}
+                                            value={field.value || ''}
                                         />
-                                    </div>
+                                    </FormItem>
+                                )}
+                            />
 
-                                    <div className="border-t pt-4">
-                                        <div className="flex items-center justify-between mb-4">
-                                            <div>
-                                                <h6 className="text-base font-semibold">Fiyat Varyasyonları</h6>
-                                                <span className="text-sm text-gray-500">Porsiyon, boy veya gramaj seçenekleri ekleyin</span>
+                            <div className="pt-1">
+                                <Controller
+                                    name="available"
+                                    control={form.control}
+                                    render={({ field }) => (
+                                        <div className="flex flex-row items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                                            <div className="space-y-0.5 pr-4">
+                                                <div className="font-semibold text-foreground text-sm">
+                                                    Müsaitlik Durumu
+                                                </div>
+                                                <p className="text-xs text-muted-foreground">
+                                                    Ürün stokta varsa açık konuma getirin.
+                                                </p>
                                             </div>
-                                            <Button
-                                                type="button"
-                                                variant="plain"
-                                                size="sm"
-                                                onClick={() => appendVariation({ type: 'porsiyon', unit: '', price: 0 })}
-                                            >
-                                                + Varyasyon Ekle
-                                            </Button>
+                                            <Switcher
+                                                className="shrink-0"
+                                                checked={field.value}
+                                                onChange={(checked: boolean) => field.onChange(checked)}
+                                            />
                                         </div>
+                                    )}
+                                />
+                            </div>
+                        </div>
 
-                                        <div className="space-y-4">
-                                            {variationFields.map((field, index) => (
-                                                <div key={field.id} className="relative grid grid-cols-1 sm:grid-cols-12 gap-4 items-start border p-4 rounded-lg bg-card">
-                                                    {/* Type Selection */}
-                                                    <div className="sm:col-span-3">
-                                                        <Controller
-                                                            name={`variations.${index}.type`}
-                                                            control={form.control}
-                                                            render={({ field, fieldState }) => (
+                        {/* 2. Medya */}
+                        <div className="space-y-4">
+                            <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
+                                <h3 className="text-lg font-semibold text-foreground">Medya</h3>
+                            </div>
+
+                            <Controller
+                                name="imageUrl"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <FormItem
+                                        label="Ürün Görseli"
+                                        extra="Ürününüz için bir görsel yükleyin."
+                                        invalid={Boolean(fieldState.error)}
+                                        errorMessage={fieldState.error?.message}
+                                    >
+                                        <ProductImageUpload
+                                            value={field.value}
+                                            onChange={(url) => field.onChange(url)}
+                                        />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        {/* 3. Fiyat */}
+                        <div className="space-y-4">
+                            <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
+                                <h3 className="text-lg font-semibold text-foreground">Fiyat</h3>
+                            </div>
+
+                            <Controller
+                                name="price"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <FormItem
+                                        label="Fiyat"
+                                        invalid={Boolean(fieldState.error)}
+                                        errorMessage={fieldState.error?.message}
+                                    >
+                                        <Input
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="45.00"
+                                            {...field}
+                                            onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                                        />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div>
+                                        <h6 className="text-base font-semibold">Fiyat Varyasyonları</h6>
+                                        <span className="text-sm text-gray-500">Porsiyon, boy veya gramaj seçenekleri ekleyin</span>
+                                    </div>
+                                    <Button
+                                        type="button"
+                                        variant="plain"
+                                        size="sm"
+                                        onClick={() => appendVariation({ type: 'porsiyon', unit: '', price: 0 })}
+                                    >
+                                        + Varyasyon Ekle
+                                    </Button>
+                                </div>
+
+                                <div className="space-y-4">
+                                    {variationFields.map((field, index) => (
+                                        <div key={field.id} className="relative grid grid-cols-1 sm:grid-cols-12 gap-4 items-start border p-4 rounded-lg bg-card">
+                                            {/* Type Selection */}
+                                            <div className="sm:col-span-3">
+                                                <Controller
+                                                    name={`variations.${index}.type`}
+                                                    control={form.control}
+                                                    render={({ field, fieldState }) => (
+                                                        <FormItem
+                                                            label="Tip"
+                                                            invalid={Boolean(fieldState.error)}
+                                                            errorMessage={fieldState.error?.message}
+                                                        >
+                                                            <select
+                                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                                {...field}
+                                                                onChange={(e) => {
+                                                                    field.onChange(e);
+                                                                    // Reset unit when type changes to avoid invalid states
+                                                                    form.setValue(`variations.${index}.unit`, '');
+                                                                }}
+                                                            >
+                                                                {VARIATION_TYPES.map((type) => (
+                                                                    <option key={type.value} value={type.value}>
+                                                                        {type.label}
+                                                                    </option>
+                                                                ))}
+                                                            </select>
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+
+                                            {/* Unit Input - Dynamic based on Type */}
+                                            <div className="sm:col-span-5">
+                                                <Controller
+                                                    name={`variations.${index}.unit`}
+                                                    control={form.control}
+                                                    render={({ field, fieldState }) => {
+                                                        const type = form.watch(`variations.${index}.type`);
+
+                                                        if (type === 'porsiyon') {
+                                                            return (
                                                                 <FormItem
-                                                                    label="Tip"
+                                                                    label="Birim"
                                                                     invalid={Boolean(fieldState.error)}
                                                                     errorMessage={fieldState.error?.message}
                                                                 >
                                                                     <select
                                                                         className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                                                         {...field}
-                                                                        onChange={(e) => {
-                                                                            field.onChange(e);
-                                                                            // Reset unit when type changes to avoid invalid states
-                                                                            form.setValue(`variations.${index}.unit`, '');
-                                                                        }}
                                                                     >
-                                                                        {VARIATION_TYPES.map((type) => (
-                                                                            <option key={type.value} value={type.value}>
-                                                                                {type.label}
-                                                                            </option>
-                                                                        ))}
+                                                                        <option value="" disabled>Seçiniz</option>
+                                                                        <option value="Tam">Tam</option>
+                                                                        <option value="Yarım">Yarım</option>
+                                                                        <option value="Bir Buçuk">Bir Buçuk</option>
+                                                                        <option value="Duble">Duble</option>
                                                                     </select>
                                                                 </FormItem>
-                                                            )}
-                                                        />
-                                                    </div>
+                                                            );
+                                                        }
 
-                                                    {/* Unit Input - Dynamic based on Type */}
-                                                    <div className="sm:col-span-5">
-                                                        <Controller
-                                                            name={`variations.${index}.unit`}
-                                                            control={form.control}
-                                                            render={({ field, fieldState }) => {
-                                                                const type = form.watch(`variations.${index}.type`);
-
-                                                                if (type === 'porsiyon') {
-                                                                    return (
-                                                                        <FormItem
-                                                                            label="Birim"
-                                                                            invalid={Boolean(fieldState.error)}
-                                                                            errorMessage={fieldState.error?.message}
-                                                                        >
-                                                                            <select
-                                                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                                                                {...field}
-                                                                            >
-                                                                                <option value="" disabled>Seçiniz</option>
-                                                                                <option value="Tam">Tam</option>
-                                                                                <option value="Yarım">Yarım</option>
-                                                                                <option value="Bir Buçuk">Bir Buçuk</option>
-                                                                                <option value="Duble">Duble</option>
-                                                                            </select>
-                                                                        </FormItem>
-                                                                    );
-                                                                }
-
-                                                                if (type === 'boy') {
-                                                                    return (
-                                                                        <FormItem
-                                                                            label="Birim"
-                                                                            invalid={Boolean(fieldState.error)}
-                                                                            errorMessage={fieldState.error?.message}
-                                                                        >
-                                                                            <select
-                                                                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                                                                                {...field}
-                                                                            >
-                                                                                <option value="" disabled>Seçiniz</option>
-                                                                                <option value="Küçük">Küçük</option>
-                                                                                <option value="Orta">Orta</option>
-                                                                                <option value="Büyük">Büyük</option>
-                                                                            </select>
-                                                                        </FormItem>
-                                                                    );
-                                                                }
-
-                                                                // Default input for 'gramaj', 'adet', 'ozel'
-                                                                return (
-                                                                    <FormItem
-                                                                        label="Değer"
-                                                                        invalid={Boolean(fieldState.error)}
-                                                                        errorMessage={fieldState.error?.message}
-                                                                    >
-                                                                        <Input
-                                                                            placeholder={type === 'gramaj' ? '150g' : type === 'adet' ? '10 Adet' : 'Özel değer'}
-                                                                            {...field}
-                                                                        />
-                                                                    </FormItem>
-                                                                );
-                                                            }}
-                                                        />
-                                                    </div>
-
-                                                    {/* Price Input */}
-                                                    <div className="sm:col-span-3">
-                                                        <Controller
-                                                            name={`variations.${index}.price`}
-                                                            control={form.control}
-                                                            render={({ field, fieldState }) => (
+                                                        if (type === 'boy') {
+                                                            return (
                                                                 <FormItem
-                                                                    label="Fiyat"
+                                                                    label="Birim"
                                                                     invalid={Boolean(fieldState.error)}
                                                                     errorMessage={fieldState.error?.message}
                                                                 >
-                                                                    <Input
-                                                                        type="number"
-                                                                        step="0.01"
-                                                                        placeholder="0.00"
+                                                                    <select
+                                                                        className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                                                                         {...field}
-                                                                        onChange={(e) => field.onChange(parseFloat(e.target.value))}
-                                                                    />
+                                                                    >
+                                                                        <option value="" disabled>Seçiniz</option>
+                                                                        <option value="Küçük">Küçük</option>
+                                                                        <option value="Orta">Orta</option>
+                                                                        <option value="Büyük">Büyük</option>
+                                                                    </select>
                                                                 </FormItem>
-                                                            )}
-                                                        />
-                                                    </div>
+                                                            );
+                                                        }
 
-                                                    {/* Delete Button */}
-                                                    <div className="absolute top-2 right-2 sm:static sm:col-span-1 sm:pt-6 sm:flex sm:justify-center">
-                                                        <Button
-                                                            type="button"
-                                                            variant="plain"
-                                                            className="h-8 w-8 text-destructive hover:text-destructive/90 p-1 flex items-center justify-center"
-                                                            onClick={() => removeVariation(index)}
-                                                        >
-                                                            <span className="sr-only">Sil</span>
-                                                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
-                                                        </Button>
-                                                    </div>
-                                                </div>
-                                            ))}
-                                            {variationFields.length === 0 && (
-                                                <div className="text-sm text-muted-foreground text-center py-4 border border-dashed rounded-lg">
-                                                    Henüz varyasyon eklenmedi.
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            </Tabs.TabContent>
-
-                            <Tabs.TabContent value="gorunurluk">
-                                <div className="space-y-6">
-                                    <Controller
-                                        name="active"
-                                        control={form.control}
-                                        render={({ field }) => (
-                                            <div className="flex flex-row items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 p-4 mb-4">
-                                                <div className="space-y-0.5 pr-4">
-                                                    <div className="font-semibold text-foreground text-sm">
-                                                        Görünürlük
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        Ürünün menüde görünmesini istiyorsanız açık konuma getirin.
-                                                    </p>
-                                                </div>
-                                                <Switcher
-                                                    className="shrink-0"
-                                                    checked={field.value}
-                                                    onChange={(checked: boolean) => field.onChange(checked)}
+                                                        // Default input for 'gramaj', 'adet', 'ozel'
+                                                        return (
+                                                            <FormItem
+                                                                label="Değer"
+                                                                invalid={Boolean(fieldState.error)}
+                                                                errorMessage={fieldState.error?.message}
+                                                            >
+                                                                <Input
+                                                                    placeholder={type === 'gramaj' ? '150g' : type === 'adet' ? '10 Adet' : 'Özel değer'}
+                                                                    {...field}
+                                                                />
+                                                            </FormItem>
+                                                        );
+                                                    }}
                                                 />
                                             </div>
-                                        )}
-                                    />
 
-                                    <div className="">
-                                        <div className="mb-4">
-                                            <h6 className="text-base block mb-1">Müsaitlik Saatleri</h6>
-                                            <p className="text-sm text-muted-foreground">
-                                                Ürünün sipariş verilebileceği saatleri belirleyin
+                                            {/* Price Input */}
+                                            <div className="sm:col-span-3">
+                                                <Controller
+                                                    name={`variations.${index}.price`}
+                                                    control={form.control}
+                                                    render={({ field, fieldState }) => (
+                                                        <FormItem
+                                                            label="Fiyat"
+                                                            invalid={Boolean(fieldState.error)}
+                                                            errorMessage={fieldState.error?.message}
+                                                        >
+                                                            <Input
+                                                                type="number"
+                                                                step="0.01"
+                                                                placeholder="0.00"
+                                                                {...field}
+                                                                onChange={(e) => field.onChange(parseFloat(e.target.value))}
+                                                            />
+                                                        </FormItem>
+                                                    )}
+                                                />
+                                            </div>
+
+                                            {/* Delete Button */}
+                                            <div className="absolute top-2 right-2 sm:static sm:col-span-1 sm:pt-6 sm:flex sm:justify-center">
+                                                <Button
+                                                    type="button"
+                                                    variant="plain"
+                                                    className="h-8 w-8 text-destructive hover:text-destructive/90 p-1 flex items-center justify-center"
+                                                    onClick={() => removeVariation(index)}
+                                                >
+                                                    <span className="sr-only">Sil</span>
+                                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-trash-2"><path d="M3 6h18" /><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" /><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" /><line x1="10" x2="10" y1="11" y2="17" /><line x1="14" x2="14" y1="11" y2="17" /></svg>
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                    {variationFields.length === 0 && (
+                                        <div className="text-sm text-muted-foreground text-center py-4 border border-dashed rounded-lg">
+                                            Henüz varyasyon eklenmedi.
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 4. Özellikler */}
+                        <div className="space-y-4">
+                            <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
+                                <h3 className="text-lg font-semibold text-foreground">Özellikler</h3>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <Controller
+                                    name="cookingTime"
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <FormItem
+                                            label="Pişirme Süresi (dk)"
+                                            invalid={Boolean(fieldState.error)}
+                                            errorMessage={fieldState.error?.message}
+                                        >
+                                            <Input
+                                                type="number"
+                                                placeholder="20"
+                                                {...field}
+                                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                            />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <Controller
+                                    name="calories"
+                                    control={form.control}
+                                    render={({ field, fieldState }) => (
+                                        <FormItem
+                                            label="Kalori (kcal)"
+                                            invalid={Boolean(fieldState.error)}
+                                            errorMessage={fieldState.error?.message}
+                                        >
+                                            <Input
+                                                type="number"
+                                                placeholder="350"
+                                                {...field}
+                                                onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
+                                            />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
+                            <Controller
+                                name="allergens"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <FormItem
+                                        label="İçerik Uyarıları"
+                                        extra="Ürünün içerdiği alerjenleri veya uyarıları seçin."
+                                        invalid={Boolean(fieldState.error)}
+                                        errorMessage={fieldState.error?.message}
+                                    >
+                                        <MultiSelect
+                                            options={allergenOptions}
+                                            value={field.value || []}
+                                            onChange={field.onChange}
+                                            placeholder="İçerik uyarılarını seçin..."
+                                        />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <Controller
+                                name="tags"
+                                control={form.control}
+                                render={() => (
+                                    <FormItem
+                                        label="Etiketler"
+                                        extra="Ürün için uygun etiketleri seçin"
+                                    >
+                                        <div className="grid grid-cols-2 gap-3 mt-2">
+                                            {availableTags.map((tag) => {
+                                                const config = TAG_CONFIG[tag];
+                                                return (
+                                                    <Controller
+                                                        key={tag}
+                                                        name="tags"
+                                                        control={form.control}
+                                                        render={({ field }) => {
+                                                            return (
+                                                                <div className="flex flex-row items-center space-x-3 space-y-0 mb-2">
+                                                                    <Checkbox
+                                                                        checked={field.value?.includes(tag)}
+                                                                        onChange={(val, e) => {
+                                                                            const checked = e.target.checked;
+                                                                            const currentTags = field.value || [];
+                                                                            return checked
+                                                                                ? field.onChange([...currentTags, tag])
+                                                                                : field.onChange(
+                                                                                    currentTags.filter((value: string) => value !== tag)
+                                                                                );
+                                                                        }}
+                                                                    />
+                                                                    <label className="font-normal cursor-pointer text-sm">
+                                                                        <span>
+                                                                            <span className="mr-1">{config.icon}</span>
+                                                                            {config.label}
+                                                                        </span>
+                                                                    </label>
+                                                                </div>
+                                                            );
+                                                        }}
+                                                    />
+                                                );
+                                            })}
+                                        </div>
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+
+                        {/* 5. Görünürlük */}
+                        <div className="space-y-4">
+                            <div className="border-b border-gray-200 dark:border-gray-700 pb-2">
+                                <h3 className="text-lg font-semibold text-foreground">Görünürlük</h3>
+                            </div>
+
+                            <Controller
+                                name="active"
+                                control={form.control}
+                                render={({ field }) => (
+                                    <div className="flex flex-row items-center justify-between rounded-lg border border-gray-200 dark:border-gray-700 p-4">
+                                        <div className="space-y-0.5 pr-4">
+                                            <div className="font-semibold text-foreground text-sm">
+                                                Görünürlük
+                                            </div>
+                                            <p className="text-xs text-muted-foreground">
+                                                Ürünün menüde görünmesini istiyorsanız açık konuma getirin.
                                             </p>
                                         </div>
-                                        <div className="border rounded-lg p-4 space-y-4">
-                                            {fields.map((field, index) => (
-                                                <div key={field.id} className="flex flex-col sm:flex-row sm:items-center gap-4 py-2 border-b last:border-0 border-border/50">
-                                                    <div className="w-36 font-medium flex items-center gap-2.5 shrink-0">
-                                                        <Controller
-                                                            name={`availabilityHours.${index}.isOpen`}
-                                                            control={form.control}
-                                                            render={({ field }) => (
-                                                                <Switcher
-                                                                    className="shrink-0"
-                                                                    checked={field.value}
-                                                                    onChange={(checked: boolean) => field.onChange(checked)}
-                                                                />
-                                                            )}
-                                                        />
-                                                        <span className="text-sm">{field.label}</span>
-                                                    </div>
-
-                                                    {form.watch(`availabilityHours.${index}.isOpen`) ? (
-                                                        <div className="flex items-center gap-2 flex-1">
-                                                            <Controller
-                                                                name={`availabilityHours.${index}.openTime`}
-                                                                control={form.control}
-                                                                render={({ field }) => (
-                                                                    <Input type="time" {...field} className="h-8 w-24" />
-                                                                )}
-                                                            />
-                                                            <span className="text-slate-500">-</span>
-                                                            <Controller
-                                                                name={`availabilityHours.${index}.closeTime`}
-                                                                control={form.control}
-                                                                render={({ field }) => (
-                                                                    <Input type="time" {...field} className="h-8 w-24" />
-                                                                )}
-                                                            />
-                                                        </div>
-                                                    ) : (
-                                                        <div className="text-muted-foreground text-sm italic">Kapalı</div>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
+                                        <Switcher
+                                            className="shrink-0"
+                                            checked={field.value}
+                                            onChange={(checked: boolean) => field.onChange(checked)}
+                                        />
                                     </div>
+                                )}
+                            />
+
+                            <div className="pt-2">
+                                <div className="mb-4">
+                                    <h6 className="text-base block mb-1">Müsaitlik Saatleri</h6>
+                                    <p className="text-sm text-muted-foreground">
+                                        Ürünün sipariş verilebileceği saatleri belirleyin
+                                    </p>
                                 </div>
-                            </Tabs.TabContent>
-                        </Tabs>
+                                <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 space-y-4">
+                                    {fields.map((field, index) => (
+                                        <div key={field.id} className="flex flex-col sm:flex-row sm:items-center gap-4 py-2 border-b last:border-0 border-border/50">
+                                            <div className="w-36 font-medium flex items-center gap-2.5 shrink-0">
+                                                <Controller
+                                                    name={`availabilityHours.${index}.isOpen`}
+                                                    control={form.control}
+                                                    render={({ field }) => (
+                                                        <Switcher
+                                                            className="shrink-0"
+                                                            checked={field.value}
+                                                            onChange={(checked: boolean) => field.onChange(checked)}
+                                                        />
+                                                    )}
+                                                />
+                                                <span className="text-sm">{field.label}</span>
+                                            </div>
+
+                                            {form.watch(`availabilityHours.${index}.isOpen`) ? (
+                                                <div className="flex items-center gap-2 flex-1">
+                                                    <Controller
+                                                        name={`availabilityHours.${index}.openTime`}
+                                                        control={form.control}
+                                                        render={({ field }) => (
+                                                            <Input type="time" {...field} className="h-8 w-24" />
+                                                        )}
+                                                    />
+                                                    <span className="text-slate-500">-</span>
+                                                    <Controller
+                                                        name={`availabilityHours.${index}.closeTime`}
+                                                        control={form.control}
+                                                        render={({ field }) => (
+                                                            <Input type="time" {...field} className="h-8 w-24" />
+                                                        )}
+                                                    />
+                                                </div>
+                                            ) : (
+                                                <div className="text-muted-foreground text-sm italic">Kapalı</div>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
                     </form>
                 </FormContainer>
             </div>

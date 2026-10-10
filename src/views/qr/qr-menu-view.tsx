@@ -343,16 +343,38 @@ export function QrMenuView({ menu, restaurant, isLivePreview = false }: QrMenuVi
                                 className="scroll-mt-14"
                             >
                                 {/* Category Header */}
-                                <div className="px-4.5 pt-5 pb-2 bg-[#F9F9F7]">
-                                    <h2 className="text-lg font-bold text-[#1C1B19] tracking-tight">
-                                        {cat.name}
-                                    </h2>
-                                    {cat.description && (
-                                        <p className="text-xs text-[#6B6862] mt-0.5">
-                                            {cat.description}
-                                        </p>
-                                    )}
-                                </div>
+                                {cat.imageUrl && cat.imageUrl.trim() ? (
+                                    <div className="relative w-full h-36 sm:h-40 overflow-hidden flex flex-col justify-end p-4.5 bg-zinc-900 select-none">
+                                        <img
+                                            src={cat.imageUrl}
+                                            alt={cat.name}
+                                            className="absolute inset-0 w-full h-full object-cover"
+                                            loading="lazy"
+                                        />
+                                        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-black/10" />
+                                        <div className="relative z-10">
+                                            <h2 className="text-xl font-bold text-white tracking-tight drop-shadow-sm">
+                                                {cat.name}
+                                            </h2>
+                                            {cat.description && (
+                                                <p className="text-xs text-white/90 mt-1 line-clamp-2 leading-relaxed drop-shadow-sm">
+                                                    {cat.description}
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="px-4.5 pt-5 pb-2 bg-[#F9F9F7]">
+                                        <h2 className="text-lg font-bold text-[#1C1B19] tracking-tight">
+                                            {cat.name}
+                                        </h2>
+                                        {cat.description && (
+                                            <p className="text-xs text-[#6B6862] mt-0.5">
+                                                {cat.description}
+                                            </p>
+                                        )}
+                                    </div>
+                                )}
 
                                 {/* Dishes in this category */}
                                 <div className="bg-white px-4.5 divide-y divide-[#E7E3DA] border-y border-[#E7E3DA]">
@@ -385,7 +407,7 @@ export function QrMenuView({ menu, restaurant, isLivePreview = false }: QrMenuVi
                                                         <div className="w-full min-w-0">
                                                             <div className="flex items-center justify-between gap-2 flex-wrap">
                                                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                                                    <span className="font-semibold text-[14px] text-[#1C1B19] group-hover:text-black leading-snug">
+                                                                    <span className="font-semibold text-[16px] text-[#1C1B19] group-hover:text-black leading-snug">
                                                                         {product.name}
                                                                     </span>
                                                                     {product.tags && product.tags.length > 0 && (
@@ -432,7 +454,7 @@ export function QrMenuView({ menu, restaurant, isLivePreview = false }: QrMenuVi
                                                         className="py-3.5 flex items-center gap-3 cursor-pointer group active:bg-zinc-50 transition-colors"
                                                     >
                                                         {product.imageUrl && (
-                                                            <div className="w-[72px] h-[72px] min-w-[72px] rounded-lg overflow-hidden bg-zinc-100 border border-[#E7E3DA] flex-shrink-0 shadow-xs">
+                                                            <div className="w-[80px] h-[80px] min-w-[80px] rounded-lg overflow-hidden bg-zinc-100 border border-[#E7E3DA] flex-shrink-0 shadow-xs">
                                                                 <img
                                                                     src={product.imageUrl}
                                                                     alt={product.name}
@@ -443,7 +465,7 @@ export function QrMenuView({ menu, restaurant, isLivePreview = false }: QrMenuVi
                                                         )}
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-1.5 flex-wrap">
-                                                                <span className="font-semibold text-[14px] text-[#1C1B19] group-hover:text-black leading-snug">
+                                                                <span className="font-semibold text-[16px] text-[#1C1B19] group-hover:text-black leading-snug">
                                                                     {product.name}
                                                                 </span>
                                                                 {product.tags && product.tags.length > 0 && (
@@ -491,7 +513,7 @@ export function QrMenuView({ menu, restaurant, isLivePreview = false }: QrMenuVi
                                                     {/* Left: Product Information */}
                                                     <div className="flex-1 min-w-0 pr-1">
                                                         <div className="flex items-center gap-1.5 flex-wrap">
-                                                            <span className="font-semibold text-[14px] text-[#1C1B19] group-hover:text-black leading-snug">
+                                                            <span className="font-semibold text-[16px] text-[#1C1B19] group-hover:text-black leading-snug">
                                                                 {product.name}
                                                             </span>
                                                             {product.tags && product.tags.length > 0 && (
@@ -526,7 +548,7 @@ export function QrMenuView({ menu, restaurant, isLivePreview = false }: QrMenuVi
 
                                                     {/* Right: Product Thumbnail */}
                                                     {product.imageUrl && (
-                                                        <div className="w-[72px] h-[72px] min-w-[72px] rounded-lg overflow-hidden bg-zinc-100 border border-[#E7E3DA] flex-shrink-0 shadow-xs">
+                                                        <div className="w-[80px] h-[80px] min-w-[80px] rounded-lg overflow-hidden bg-zinc-100 border border-[#E7E3DA] flex-shrink-0 shadow-xs">
                                                             <img
                                                                 src={product.imageUrl}
                                                                 alt={product.name}
@@ -544,14 +566,12 @@ export function QrMenuView({ menu, restaurant, isLivePreview = false }: QrMenuVi
                     </div>
                 </div>
 
-                {/* Fixed Bottom Footer Bar (Continuously visible like NordQR) */}
+                {/* Fixed Bottom Footer Bar */}
                 <footer className="flex-shrink-0 bg-white border-t border-[#E7E3DA] py-2.5 px-4 text-center z-10 select-none shadow-[0_-1px_3px_rgba(0,0,0,0.03)]">
                     <div className="flex items-center justify-center gap-1.5 text-xs text-[#6B6862]">
                         <span className="font-semibold text-[#1C1B19]">
                             {restaurant?.name || menu.name || 'Dijital Menü'}
                         </span>
-                        <span className="text-[#E7E3DA]">•</span>
-                        <span>NordQR Deneyimi</span>
                     </div>
                 </footer>
 

@@ -665,15 +665,6 @@ export function Menu2View() {
                             <span>Kategorileri Sırala</span>
                         </Dropdown.Item>
 
-                        <Dropdown.Item
-                            eventKey="add-category"
-                            onClick={() => setCategoryDialog({ open: true, category: undefined })}
-                            className="flex items-center gap-2 cursor-pointer"
-                        >
-                            <Plus className="h-4 w-4 text-gray-500" />
-                            <span>Yeni Kategori Ekle</span>
-                        </Dropdown.Item>
-
                         {currentMenu && (
                             <>
                                 <Dropdown.Item variant="divider" />

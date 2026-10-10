@@ -3,11 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Loader2 } from 'lucide-react';
-
 import { Button, Drawer, Input } from '@/components/ui';
 import { FormContainer, FormItem } from '@/components/ui/Form';
-import Upload from '@/components/ui/Upload';
+import { ImageUpload } from '@/components/shared/image-upload';
 
 import { categorySchema, type CategoryFormData } from '@/lib/validations';
 import type { Category } from '@/types';
@@ -130,25 +128,17 @@ export function CategoryDrawer({
                             render={({ field, fieldState }) => (
                                 <FormItem
                                     label="Kategori Görseli"
+                                    extra="Kategori için bir görsel yükleyin."
                                     invalid={Boolean(fieldState.error)}
                                     errorMessage={fieldState.error?.message}
                                 >
-                                    <Upload
-                                        accept="image/*"
-                                        fileList={field.value ? [new File([], 'image.png')] : []}
-                                        onChange={(files) => {
-                                            if (files.length > 0) {
-                                                field.onChange(files[0]);
-                                            } else {
-                                                field.onChange('');
-                                            }
-                                        }}
-                                        draggable
-                                    >
-                                        <div className="text-center p-4">
-                                            <p>Görsel Seç veya Sürükle Bırak</p>
-                                        </div>
-                                    </Upload>
+                                    <ImageUpload
+                                        value={field.value}
+                                        onChange={(url) => field.onChange(url)}
+                                        folder="categories"
+                                        imageAlt="Kategori Görseli"
+                                        disabled={isSaving}
+                                    />
                                 </FormItem>
                             )}
                         />
@@ -192,3 +182,5 @@ export function CategoryDrawer({
         </Drawer>
     );
 }
+
+export default CategoryDrawer;

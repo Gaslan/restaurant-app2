@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { headers } from 'next/headers';
 import { auth } from '@/lib/auth';
-import { uploadImageToCloudinary, isCloudinaryConfigured } from '@/lib/cloudinary';
+import { uploadFile, isStorageConfigured } from '@/lib/storage';
 
 export const runtime = 'nodejs';
 
@@ -31,11 +31,11 @@ export async function POST(request: NextRequest) {
 
         const restaurantId = (session.user as any).restaurantId;
 
-        // Check Cloudinary configuration
-        if (!isCloudinaryConfigured()) {
+        // Check Storage configuration
+        if (!isStorageConfigured()) {
             return NextResponse.json(
                 {
-                    error: 'Cloudinary API anahtarları tanımlanmamış. Lütfen .env.local dosyasına CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY ve CLOUDINARY_API_SECRET değerlerini ekleyin.',
+                    error: 'Depolama servisi yapılandırması eksik. Lütfen ortam değişkenlerini kontrol edin.',
                 },
                 { status: 500 }
             );
@@ -75,17 +75,23 @@ export async function POST(request: NextRequest) {
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
 
-        // Upload to Cloudinary under the restaurant's folder
-        const targetFolder = `restaurants/${restaurantId}/${subfolder}`;
-        const uploadResult = await uploadImageToCloudinary(buffer, targetFolder);
+        // Upload through storage service
+        const uploadResult = await uploadFile({
+            fileBuffer: buffer,
+            filename: file.name,
+            mimeType: file.type,
+            folder: subfolder,
+            restaurantId,
+        });
 
         return NextResponse.json({
             success: true,
-            url: uploadResult.secure_url,
-            publicId: uploadResult.public_id,
+            url: uploadResult.url,
+            publicId: uploadResult.publicId,
             width: uploadResult.width,
             height: uploadResult.height,
             format: uploadResult.format,
+            provider: uploadResult.provider,
         });
     } catch (error: any) {
         console.error('Image upload error:', error);
