@@ -104,7 +104,8 @@ export interface Restaurant {
 
     // Appearance Settings
     appearance?: {
-        imagePosition?: 'right' | 'left' | 'top';
+        imagePosition?: 'right' | 'left' | 'top' | 'grid';
+        showDescription?: boolean;
     };
 
     createdAt: Date;

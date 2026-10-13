@@ -219,6 +219,7 @@ export function QrMenuView({ menu, restaurant, isLivePreview = false }: QrMenuVi
 
     // Appearance configuration
     const imagePosition = restaurant?.appearance?.imagePosition || 'right';
+    const showDescription = restaurant?.appearance?.showDescription ?? true;
 
     return (
         <div className={isLivePreview ? "w-full flex items-center justify-center font-sans py-2" : "min-h-dvh bg-[#e4e4e7] flex items-center justify-center font-sans md:py-6 md:px-4"}>
@@ -377,11 +378,95 @@ export function QrMenuView({ menu, restaurant, isLivePreview = false }: QrMenuVi
                                 )}
 
                                 {/* Dishes in this category */}
-                                <div className="bg-white px-4.5 divide-y divide-[#E7E3DA] border-y border-[#E7E3DA]">
-                                    {(cat.products || [])
-                                        .filter((p) => p.active !== false)
-                                        .map((product) => {
-                                            const hasVariations = product.variations && product.variations.length > 0;
+                                {imagePosition === 'grid' ? (
+                                    <div className="bg-white px-4 py-4 grid grid-cols-2 gap-x-3.5 gap-y-4 border-y border-[#E7E3DA]">
+                                        {(cat.products || [])
+                                            .filter((p) => p.active !== false)
+                                            .map((product) => {
+                                                const hasVariations = product.variations && product.variations.length > 0;
+                                                const isAvailable = product.available !== false;
+                                                return (
+                                                    <div
+                                                        key={product.id}
+                                                        onClick={() => {
+                                                            setSelectedProduct(product);
+                                                            setSelectedVariationIndex(0);
+                                                        }}
+                                                        className="flex flex-col justify-between cursor-pointer group active:opacity-75 transition-opacity"
+                                                    >
+                                                        <div>
+                                                            {product.imageUrl && (
+                                                                <div className="w-full h-32 rounded-xl overflow-hidden bg-zinc-100 border border-[#E7E3DA] mb-2 flex-shrink-0 relative">
+                                                                    <img
+                                                                        src={product.imageUrl}
+                                                                        alt={product.name}
+                                                                        className={`w-full h-full object-cover transition-transform duration-200 ${
+                                                                            isAvailable ? 'group-hover:scale-105' : 'grayscale opacity-75'
+                                                                        }`}
+                                                                        loading="lazy"
+                                                                    />
+                                                                    {!isAvailable && (
+                                                                        <div className="absolute inset-0 bg-black/25 flex items-center justify-center p-1 pointer-events-none">
+                                                                            <span className="bg-zinc-900/90 text-white text-[10px] font-bold px-2.5 py-0.5 rounded-full shadow-sm tracking-wider uppercase">
+                                                                                Tükendi
+                                                                            </span>
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                            )}
+                                                            <div className="w-full min-w-0">
+                                                                <div className="flex items-start gap-1.5 flex-wrap">
+                                                                    <span className={`font-semibold text-[13px] leading-snug line-clamp-2 ${
+                                                                        isAvailable ? 'text-[#1C1B19] group-hover:text-black' : 'text-zinc-400'
+                                                                    }`}>
+                                                                        {product.name}
+                                                                    </span>
+                                                                    {!product.imageUrl && !isAvailable && (
+                                                                        <span className="bg-zinc-100 text-zinc-500 border border-zinc-200 text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide">
+                                                                            Tükendi
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                {product.tags && product.tags.length > 0 && (
+                                                                    <div className={`flex items-center gap-1 mt-1 ${!isAvailable ? 'opacity-50 grayscale' : ''}`}>
+                                                                        {product.tags.slice(0, 1).map(renderTag)}
+                                                                    </div>
+                                                                )}
+                                                                {showDescription && product.description && (
+                                                                    <p className={`text-[11px] line-clamp-2 mt-1 leading-relaxed ${
+                                                                        isAvailable ? 'text-[#6B6862]' : 'text-zinc-400/80'
+                                                                    }`}>
+                                                                        {product.description}
+                                                                    </p>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className={`mt-2 text-[13px] font-bold ${
+                                                            isAvailable ? 'text-[#1C1B19]' : 'text-zinc-400'
+                                                        }`}>
+                                                            {hasVariations ? (
+                                                                <div className="flex items-center gap-1 text-xs">
+                                                                    <span>{formatPrice(product.variations![0].price)}</span>
+                                                                    {product.variations!.length > 1 && (
+                                                                        <span className={`text-[10px] font-normal ${isAvailable ? 'text-[#6B6862]' : 'text-zinc-400'}`}>'den</span>
+                                                                    )}
+                                                                </div>
+                                                            ) : (
+                                                                formatPrice(product.price)
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                    </div>
+                                ) : (
+                                    <div className="bg-white px-4.5 divide-y divide-[#E7E3DA] border-y border-[#E7E3DA]">
+                                        {(cat.products || [])
+                                            .filter((p) => p.active !== false)
+                                            .map((product) => {
+                                                const hasVariations = product.variations && product.variations.length > 0;
+                                                const isAvailable = product.available !== false;
                                             
                                             // Top image position layout
                                             if (imagePosition === 'top') {
@@ -395,33 +480,49 @@ export function QrMenuView({ menu, restaurant, isLivePreview = false }: QrMenuVi
                                                         className="py-3.5 flex flex-col gap-2.5 cursor-pointer group active:bg-zinc-50 transition-colors"
                                                     >
                                                         {product.imageUrl && (
-                                                            <div className="w-full h-44 rounded-xl overflow-hidden bg-zinc-100 border border-[#E7E3DA] flex-shrink-0 shadow-xs">
+                                                            <div className="w-full h-44 rounded-xl overflow-hidden bg-zinc-100 border border-[#E7E3DA] flex-shrink-0 shadow-xs relative">
                                                                 <img
                                                                     src={product.imageUrl}
                                                                     alt={product.name}
-                                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                                                    className={`w-full h-full object-cover transition-transform duration-200 ${
+                                                                        isAvailable ? 'group-hover:scale-105' : 'grayscale opacity-75'
+                                                                    }`}
                                                                     loading="lazy"
                                                                 />
+                                                                {!isAvailable && (
+                                                                    <div className="absolute inset-0 bg-black/25 flex items-center justify-center p-2 pointer-events-none">
+                                                                        <span className="bg-zinc-900/90 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md tracking-wider uppercase">
+                                                                            Tükendi
+                                                                        </span>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         )}
                                                         <div className="w-full min-w-0">
                                                             <div className="flex items-center justify-between gap-2 flex-wrap">
                                                                 <div className="flex items-center gap-1.5 flex-wrap">
-                                                                    <span className="font-semibold text-[16px] text-[#1C1B19] group-hover:text-black leading-snug">
+                                                                    <span className={`font-semibold text-[16px] leading-snug ${
+                                                                        isAvailable ? 'text-[#1C1B19] group-hover:text-black' : 'text-zinc-400'
+                                                                    }`}>
                                                                         {product.name}
                                                                     </span>
+                                                                    {!product.imageUrl && !isAvailable && (
+                                                                        <span className="bg-zinc-100 text-zinc-500 border border-zinc-200 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide">
+                                                                            Tükendi
+                                                                        </span>
+                                                                    )}
                                                                     {product.tags && product.tags.length > 0 && (
-                                                                        <div className="flex items-center gap-1">
+                                                                        <div className={`flex items-center gap-1 ${!isAvailable ? 'opacity-50 grayscale' : ''}`}>
                                                                             {product.tags.slice(0, 2).map(renderTag)}
                                                                         </div>
                                                                     )}
                                                                 </div>
-                                                                <div className="text-[13px] font-bold text-[#1C1B19]">
+                                                                <div className={`text-[13px] font-bold ${isAvailable ? 'text-[#1C1B19]' : 'text-zinc-400'}`}>
                                                                     {hasVariations ? (
                                                                         <div className="flex items-center gap-1.5 flex-wrap text-xs">
                                                                             {product.variations!.map((v, i) => (
                                                                                 <span key={i} className="inline-flex items-center">
-                                                                                    {i > 0 && <span className="mx-1 text-[#6B6862]">·</span>}
+                                                                                    {i > 0 && <span className={`mx-1 ${isAvailable ? 'text-[#6B6862]' : 'text-zinc-400'}`}>·</span>}
                                                                                     <span>{formatPrice(v.price)}</span>
                                                                                 </span>
                                                                             ))}
@@ -432,8 +533,10 @@ export function QrMenuView({ menu, restaurant, isLivePreview = false }: QrMenuVi
                                                                 </div>
                                                             </div>
 
-                                                            {product.description && (
-                                                                <p className="text-xs text-[#6B6862] line-clamp-2 mt-1 leading-relaxed">
+                                                            {showDescription && product.description && (
+                                                                <p className={`text-xs line-clamp-2 mt-1 leading-relaxed ${
+                                                                    isAvailable ? 'text-[#6B6862]' : 'text-zinc-400/80'
+                                                                }`}>
                                                                     {product.description}
                                                                 </p>
                                                             )}
@@ -454,39 +557,57 @@ export function QrMenuView({ menu, restaurant, isLivePreview = false }: QrMenuVi
                                                         className="py-3.5 flex items-center gap-3 cursor-pointer group active:bg-zinc-50 transition-colors"
                                                     >
                                                         {product.imageUrl && (
-                                                            <div className="w-[80px] h-[80px] min-w-[80px] rounded-lg overflow-hidden bg-zinc-100 border border-[#E7E3DA] flex-shrink-0 shadow-xs">
+                                                            <div className="w-[96px] h-[96px] min-w-[96px] rounded-lg overflow-hidden bg-zinc-100 border border-[#E7E3DA] flex-shrink-0 shadow-xs relative">
                                                                 <img
                                                                     src={product.imageUrl}
                                                                     alt={product.name}
-                                                                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                                                    className={`w-full h-full object-cover transition-transform duration-200 ${
+                                                                        isAvailable ? 'group-hover:scale-105' : 'grayscale opacity-75'
+                                                                    }`}
                                                                     loading="lazy"
                                                                 />
+                                                                {!isAvailable && (
+                                                                    <div className="absolute inset-0 bg-black/30 flex items-center justify-center p-1 pointer-events-none">
+                                                                        <span className="bg-zinc-900/90 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-xs tracking-wider uppercase">
+                                                                            Tükendi
+                                                                        </span>
+                                                                    </div>
+                                                                )}
                                                             </div>
                                                         )}
                                                         <div className="flex-1 min-w-0">
                                                             <div className="flex items-center gap-1.5 flex-wrap">
-                                                                <span className="font-semibold text-[16px] text-[#1C1B19] group-hover:text-black leading-snug">
+                                                                <span className={`font-semibold text-[16px] leading-snug ${
+                                                                    isAvailable ? 'text-[#1C1B19] group-hover:text-black' : 'text-zinc-400'
+                                                                }`}>
                                                                     {product.name}
                                                                 </span>
+                                                                {!product.imageUrl && !isAvailable && (
+                                                                    <span className="bg-zinc-100 text-zinc-500 border border-zinc-200 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide">
+                                                                        Tükendi
+                                                                    </span>
+                                                                )}
                                                                 {product.tags && product.tags.length > 0 && (
-                                                                    <div className="flex items-center gap-1">
+                                                                    <div className={`flex items-center gap-1 ${!isAvailable ? 'opacity-50 grayscale' : ''}`}>
                                                                         {product.tags.slice(0, 2).map(renderTag)}
                                                                     </div>
                                                                 )}
                                                             </div>
 
-                                                            {product.description && (
-                                                                <p className="text-xs text-[#6B6862] line-clamp-2 mt-1 leading-relaxed">
+                                                            {showDescription && product.description && (
+                                                                <p className={`text-xs line-clamp-2 mt-1 leading-relaxed ${
+                                                                    isAvailable ? 'text-[#6B6862]' : 'text-zinc-400/80'
+                                                                }`}>
                                                                     {product.description}
                                                                 </p>
                                                             )}
 
-                                                            <div className="mt-2 text-[13px] font-bold text-[#1C1B19]">
+                                                            <div className={`mt-2 text-[13px] font-bold ${isAvailable ? 'text-[#1C1B19]' : 'text-zinc-400'}`}>
                                                                 {hasVariations ? (
                                                                     <div className="flex items-center gap-1.5 flex-wrap text-xs">
                                                                         {product.variations!.map((v, i) => (
                                                                             <span key={i} className="inline-flex items-center">
-                                                                                {i > 0 && <span className="mx-1 text-[#6B6862]">·</span>}
+                                                                                {i > 0 && <span className={`mx-1 ${isAvailable ? 'text-[#6B6862]' : 'text-zinc-400'}`}>·</span>}
                                                                                 <span>{formatPrice(v.price)}</span>
                                                                             </span>
                                                                         ))}
@@ -513,29 +634,38 @@ export function QrMenuView({ menu, restaurant, isLivePreview = false }: QrMenuVi
                                                     {/* Left: Product Information */}
                                                     <div className="flex-1 min-w-0 pr-1">
                                                         <div className="flex items-center gap-1.5 flex-wrap">
-                                                            <span className="font-semibold text-[16px] text-[#1C1B19] group-hover:text-black leading-snug">
+                                                            <span className={`font-semibold text-[16px] leading-snug ${
+                                                                isAvailable ? 'text-[#1C1B19] group-hover:text-black' : 'text-zinc-400'
+                                                            }`}>
                                                                 {product.name}
                                                             </span>
+                                                            {!product.imageUrl && !isAvailable && (
+                                                                <span className="bg-zinc-100 text-zinc-500 border border-zinc-200 text-[10px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wide">
+                                                                    Tükendi
+                                                                </span>
+                                                            )}
                                                             {product.tags && product.tags.length > 0 && (
-                                                                <div className="flex items-center gap-1">
+                                                                <div className={`flex items-center gap-1 ${!isAvailable ? 'opacity-50 grayscale' : ''}`}>
                                                                     {product.tags.slice(0, 2).map(renderTag)}
                                                                 </div>
                                                             )}
                                                         </div>
 
-                                                        {product.description && (
-                                                            <p className="text-xs text-[#6B6862] line-clamp-2 mt-1 leading-relaxed">
+                                                        {showDescription && product.description && (
+                                                            <p className={`text-xs line-clamp-2 mt-1 leading-relaxed ${
+                                                                isAvailable ? 'text-[#6B6862]' : 'text-zinc-400/80'
+                                                            }`}>
                                                                 {product.description}
                                                             </p>
                                                         )}
 
                                                         {/* Price */}
-                                                        <div className="mt-2 text-[13px] font-bold text-[#1C1B19]">
+                                                        <div className={`mt-2 text-[13px] font-bold ${isAvailable ? 'text-[#1C1B19]' : 'text-zinc-400'}`}>
                                                             {hasVariations ? (
                                                                 <div className="flex items-center gap-1.5 flex-wrap text-xs">
                                                                     {product.variations!.map((v, i) => (
                                                                         <span key={i} className="inline-flex items-center">
-                                                                            {i > 0 && <span className="mx-1 text-[#6B6862]">·</span>}
+                                                                            {i > 0 && <span className={`mx-1 ${isAvailable ? 'text-[#6B6862]' : 'text-zinc-400'}`}>·</span>}
                                                                             <span>{formatPrice(v.price)}</span>
                                                                         </span>
                                                                     ))}
@@ -548,19 +678,29 @@ export function QrMenuView({ menu, restaurant, isLivePreview = false }: QrMenuVi
 
                                                     {/* Right: Product Thumbnail */}
                                                     {product.imageUrl && (
-                                                        <div className="w-[80px] h-[80px] min-w-[80px] rounded-lg overflow-hidden bg-zinc-100 border border-[#E7E3DA] flex-shrink-0 shadow-xs">
+                                                        <div className="w-[96px] h-[96px] min-w-[96px] rounded-lg overflow-hidden bg-zinc-100 border border-[#E7E3DA] flex-shrink-0 shadow-xs relative">
                                                             <img
                                                                 src={product.imageUrl}
                                                                 alt={product.name}
-                                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200"
+                                                                className={`w-full h-full object-cover transition-transform duration-200 ${
+                                                                    isAvailable ? 'group-hover:scale-105' : 'grayscale opacity-75'
+                                                                }`}
                                                                 loading="lazy"
                                                             />
+                                                            {!isAvailable && (
+                                                                <div className="absolute inset-0 bg-black/30 flex items-center justify-center p-1 pointer-events-none">
+                                                                    <span className="bg-zinc-900/90 text-white text-[9px] font-bold px-2 py-0.5 rounded-full shadow-xs tracking-wider uppercase">
+                                                                        Tükendi
+                                                                    </span>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )}
                                                 </div>
                                             );
                                         })}
-                                </div>
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -622,42 +762,67 @@ export function QrMenuView({ menu, restaurant, isLivePreview = false }: QrMenuVi
                                     </div>
                                     {searchResults.length > 0 ? (
                                         <div className="bg-white rounded-xl border border-[#E7E3DA] divide-y divide-[#E7E3DA] px-4">
-                                            {searchResults.map(({ product, categoryName }) => (
-                                                <div
-                                                    key={product.id}
-                                                    onClick={() => {
-                                                        setSelectedProduct(product);
-                                                        setSelectedVariationIndex(0);
-                                                    }}
-                                                    className="py-3 flex justify-between items-center gap-3 cursor-pointer group active:bg-zinc-50"
-                                                >
-                                                    <div className="flex-1 min-w-0">
-                                                        <span className="text-[11px] text-[#6B6862] block mb-0.5">
-                                                            {categoryName}
-                                                        </span>
-                                                        <span className="font-semibold text-sm text-[#1C1B19] block">
-                                                            {product.name}
-                                                        </span>
-                                                        {product.description && (
-                                                            <p className="text-xs text-[#6B6862] line-clamp-1 mt-0.5">
-                                                                {product.description}
-                                                            </p>
+                                            {searchResults.map(({ product, categoryName }) => {
+                                                const isAvailable = product.available !== false;
+                                                return (
+                                                    <div
+                                                        key={product.id}
+                                                        onClick={() => {
+                                                            setSelectedProduct(product);
+                                                            setSelectedVariationIndex(0);
+                                                        }}
+                                                        className="py-3 flex justify-between items-center gap-3 cursor-pointer group active:bg-zinc-50"
+                                                    >
+                                                        <div className="flex-1 min-w-0">
+                                                            <span className="text-[11px] text-[#6B6862] block mb-0.5">
+                                                                {categoryName}
+                                                            </span>
+                                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                                <span className={`font-semibold text-sm block ${
+                                                                    isAvailable ? 'text-[#1C1B19]' : 'text-zinc-400'
+                                                                }`}>
+                                                                    {product.name}
+                                                                </span>
+                                                                {!isAvailable && !product.imageUrl && (
+                                                                    <span className="text-[9px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-zinc-200 text-zinc-600">
+                                                                        Tükendi
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                            {showDescription && product.description && (
+                                                                <p className={`text-xs line-clamp-1 mt-0.5 ${
+                                                                    isAvailable ? 'text-[#6B6862]' : 'text-zinc-400/80'
+                                                                }`}>
+                                                                    {product.description}
+                                                                </p>
+                                                            )}
+                                                            <div className={`mt-1.5 text-xs font-bold ${
+                                                                isAvailable ? 'text-[#1C1B19]' : 'text-zinc-400'
+                                                            }`}>
+                                                                {formatPrice(product.price)}
+                                                            </div>
+                                                        </div>
+                                                        {product.imageUrl && (
+                                                            <div className="relative w-14 h-14 rounded-lg overflow-hidden bg-zinc-100 border border-[#E7E3DA] flex-shrink-0">
+                                                                <img
+                                                                    src={product.imageUrl}
+                                                                    alt={product.name}
+                                                                    className={`w-full h-full object-cover ${
+                                                                        !isAvailable ? 'grayscale opacity-75' : ''
+                                                                    }`}
+                                                                />
+                                                                {!isAvailable && (
+                                                                    <div className="absolute inset-0 bg-black/35 flex items-center justify-center p-1 pointer-events-none">
+                                                                        <span className="bg-zinc-900/90 text-white text-[8px] font-bold px-1.5 py-0.5 rounded shadow-xs uppercase tracking-wider text-center">
+                                                                            Tükendi
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+                                                            </div>
                                                         )}
-                                                        <div className="mt-1.5 text-xs font-bold text-[#1C1B19]">
-                                                            {formatPrice(product.price)}
-                                                        </div>
                                                     </div>
-                                                    {product.imageUrl && (
-                                                        <div className="w-14 h-14 rounded-lg overflow-hidden bg-zinc-100 border border-[#E7E3DA] flex-shrink-0">
-                                                            <img
-                                                                src={product.imageUrl}
-                                                                alt={product.name}
-                                                                className="w-full h-full object-cover"
-                                                            />
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            ))}
+                                                );
+                                            })}
                                         </div>
                                     ) : (
                                         <div className="py-12 text-center text-sm text-[#6B6862]">

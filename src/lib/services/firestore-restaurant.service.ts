@@ -43,7 +43,10 @@ export async function getRestaurant(id: string): Promise<Restaurant | null> {
             address: data.address ?? rootData.address,
             socialMedia: data.socialMedia ?? rootData.socialMedia ?? [],
             openingHours: data.openingHours ?? rootData.openingHours ?? [],
-            appearance: data.appearance ?? rootData.appearance ?? { imagePosition: 'right' },
+            appearance: {
+                imagePosition: data.appearance?.imagePosition ?? rootData.appearance?.imagePosition ?? 'right',
+                showDescription: data.appearance?.showDescription ?? rootData.appearance?.showDescription ?? true,
+            },
             createdAt: data.createdAt?.toDate?.() || rootData.createdAt?.toDate?.() || new Date(),
             updatedAt: data.updatedAt?.toDate?.() || rootData.updatedAt?.toDate?.() || new Date(),
         };
@@ -270,7 +273,7 @@ export async function createRestaurant(params: {
         address: '',
         socialMedia: [],
         openingHours: [],
-        appearance: { imagePosition: 'right' as const },
+        appearance: { imagePosition: 'right' as const, showDescription: true },
         createdAt: FieldValue.serverTimestamp(),
         updatedAt: FieldValue.serverTimestamp(),
     };
@@ -321,7 +324,7 @@ export async function createRestaurant(params: {
             address: '',
             socialMedia: [],
             openingHours: [],
-            appearance: { imagePosition: 'right' },
+            appearance: { imagePosition: 'right', showDescription: true },
             createdAt: new Date(),
             updatedAt: new Date(),
         };

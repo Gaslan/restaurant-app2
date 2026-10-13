@@ -292,6 +292,8 @@ export function QrProductDrawer({
 
     if (!isVisible || !product) return null;
 
+    const isAvailable = product.available !== false;
+
     return (
         <div
             ref={containerRef}
@@ -333,7 +335,7 @@ export function QrProductDrawer({
                 {/* Scrollable Content Body */}
                 <div
                     ref={contentScrollRef}
-                    className="flex-1 overflow-y-auto px-4.5 pt-2 pb-8 space-y-4 select-none"
+                    className="flex-1 overflow-y-auto px-0 pt-1 pb-8 space-y-4 select-none"
                     style={{
                         scrollbarWidth: 'none',
                         WebkitOverflowScrolling: 'touch',
@@ -344,24 +346,44 @@ export function QrProductDrawer({
                     {/* Product Image */}
                     {product.imageUrl && (
                         <div
-                            className="w-full aspect-video rounded-xl overflow-hidden bg-zinc-100 border border-[#E7E3DA] flex-shrink-0 select-none"
+                            className="relative w-full aspect-video overflow-hidden bg-zinc-100 border border-[#E7E3DA] flex-shrink-0 select-none"
                             style={{ touchAction: 'none' }}
                         >
                             <img
                                 src={product.imageUrl}
                                 alt={product.name}
-                                className="w-full h-full object-cover pointer-events-none select-none"
+                                className={`w-full h-full object-cover pointer-events-none select-none ${
+                                    !isAvailable ? 'grayscale opacity-80' : ''
+                                }`}
                                 draggable={false}
                             />
+                            {!isAvailable && (
+                                <div className="absolute inset-0 bg-black/30 flex items-center justify-center p-2 pointer-events-none">
+                                    <span className="bg-zinc-900/90 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md tracking-wider uppercase">
+                                        Tükendi
+                                    </span>
+                                </div>
+                            )}
                         </div>
                     )}
 
                     {/* Product Title & Price */}
-                    <div>
-                        <h3 className="text-xl font-bold text-[#1C1B19] tracking-tight">
-                            {product.name}
-                        </h3>
-                        <div className="mt-1 text-lg font-bold text-[#1C1B19]">
+                    <div className="px-4">
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <h3 className={`text-xl font-bold tracking-tight ${
+                                isAvailable ? 'text-[#1C1B19]' : 'text-zinc-500'
+                            }`}>
+                                {product.name}
+                            </h3>
+                            {!isAvailable && (
+                                <span className="bg-zinc-100 text-zinc-500 border border-zinc-200 text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+                                    Tükendi
+                                </span>
+                            )}
+                        </div>
+                        <div className={`mt-1 text-lg font-bold ${
+                            isAvailable ? 'text-[#1C1B19]' : 'text-zinc-400'
+                        }`}>
                             {product.variations && product.variations.length > 0 ? (
                                 formatPrice(
                                     product.variations[selectedVariationIndex]?.price || product.price
@@ -374,7 +396,7 @@ export function QrProductDrawer({
 
                     {/* Variations Selector if any */}
                     {product.variations && product.variations.length > 0 && (
-                        <div className="space-y-2 pt-1">
+                        <div className="space-y-2 pt-1 px-4">
                             <span className="text-xs font-semibold text-[#1C1B19] uppercase tracking-wider">
                                 Seçenekler
                             </span>
@@ -408,8 +430,10 @@ export function QrProductDrawer({
 
                     {/* Description */}
                     {product.description && (
-                        <div className="pt-1">
-                            <p className="text-sm text-[#6B6862] leading-relaxed">
+                        <div className="pt-1 px-4">
+                            <p className={`text-sm leading-relaxed ${
+                                isAvailable ? 'text-[#6B6862]' : 'text-zinc-400'
+                            }`}>
                                 {product.description}
                             </p>
                         </div>
@@ -417,7 +441,7 @@ export function QrProductDrawer({
 
                     {/* Dietary Tags */}
                     {product.tags && product.tags.length > 0 && (
-                        <div className="pt-2">
+                        <div className="pt-2 px-4">
                             <div className="flex flex-wrap gap-1.5">
                                 {product.tags.map(renderTag)}
                             </div>
@@ -426,7 +450,7 @@ export function QrProductDrawer({
 
                     {/* Additional Details: Calories, Prep Time */}
                     {(product.calories || product.cookingTime) && (
-                        <div className="pt-2 flex items-center gap-4 text-xs text-[#6B6862]">
+                        <div className="pt-2 px-4 flex items-center gap-4 text-xs text-[#6B6862]">
                             {product.calories ? (
                                 <span className="inline-flex items-center gap-1">
                                     <Flame className="w-3.5 h-3.5 text-amber-600" />
@@ -444,7 +468,7 @@ export function QrProductDrawer({
 
                     {/* Allergens */}
                     {product.allergens && product.allergens.length > 0 && (
-                        <div className="pt-2 border-t border-[#E7E3DA]">
+                        <div className="pt-2 px-4 border-t border-[#E7E3DA]">
                             <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 mb-1">
                                 <AlertCircle className="w-3.5 h-3.5" />
                                 <span>Alerjen Uyarısı</span>
