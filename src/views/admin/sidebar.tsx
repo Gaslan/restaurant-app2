@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Settings, Menu as MenuIcon, ChevronRight, Store, QrCode, Smartphone, Plus, LayoutList } from 'lucide-react';
+import { Home, Settings, Menu as MenuIcon, ChevronRight, Store, QrCode, Smartphone, LayoutList, Tag } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 import { authClient } from '@/lib/auth-client';
@@ -42,7 +42,7 @@ const navigationItems: NavigationItem[] = [
             {
                 title: 'Fiyat Editörü',
                 href: '/price-editor',
-                icon: Plus, // Using Plus as a temporary icon or similar
+                icon: Tag,
             }
         ]
     },

@@ -1,6 +1,6 @@
 'use server'
 
-import { updateProduct } from '@/lib/services/firestore-product.service';
+import { batchUpdateProductPrices } from '@/lib/services/firestore-product.service';
 import { revalidatePath } from 'next/cache';
 
 export interface PriceUpdateInput {
@@ -13,18 +13,11 @@ export interface PriceUpdateInput {
 
 export async function updateProductPrices(updates: PriceUpdateInput[]) {
     try {
-        for (const update of updates) {
-            await updateProduct(
-                update.restaurantId,
-                update.menuId,
-                update.categoryId,
-                update.productId,
-                { price: update.price }
-            );
-        }
+        await batchUpdateProductPrices(updates);
 
         revalidatePath('/price-editor');
         revalidatePath('/menus');
+        revalidatePath('/menu2');
 
         return { success: true };
     } catch (error) {
@@ -32,3 +25,4 @@ export async function updateProductPrices(updates: PriceUpdateInput[]) {
         return { success: false, error: 'Failed to update prices' };
     }
 }
+

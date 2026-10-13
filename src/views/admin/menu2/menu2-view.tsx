@@ -950,11 +950,11 @@ export function Menu2View() {
                                 >
                                     <Dropdown.Item
                                         eventKey="change-price"
-                                        onClick={() => setBatchPriceModalOpen(true)}
+                                        onClick={() => router.push(`/price-editor?menuId=${selectedMenuId}`)}
                                         className="flex items-center gap-2 cursor-pointer"
                                     >
                                         <Tag className="h-4 w-4 text-gray-500" />
-                                        <span>Fiyat Değiştir</span>
+                                        <span>Fiyat Editörü</span>
                                     </Dropdown.Item>
 
                                     <Dropdown.Item variant="divider" />

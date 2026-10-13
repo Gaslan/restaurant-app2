@@ -442,3 +442,47 @@ export async function reorderProduct(
         throw new Error('Failed to reorder product');
     }
 }
+
+export interface PriceBatchUpdateItem {
+    restaurantId: string;
+    menuId: string;
+    categoryId: string;
+    productId: string;
+    price: number;
+}
+
+/**
+ * Batch update multiple product prices atomically in Firestore
+ */
+export async function batchUpdateProductPrices(items: PriceBatchUpdateItem[]): Promise<void> {
+    if (items.length === 0) return;
+    const db = getFirestoreDb();
+
+    // Firestore batch limit is 500 operations
+    const CHUNK_SIZE = 450;
+    for (let i = 0; i < items.length; i += CHUNK_SIZE) {
+        const chunk = items.slice(i, i + CHUNK_SIZE);
+        const batch = db.batch();
+        const now = new Date();
+
+        for (const item of chunk) {
+            const docRef = db
+                .collection('restaurants')
+                .doc(item.restaurantId)
+                .collection('menus')
+                .doc(item.menuId)
+                .collection('categories')
+                .doc(item.categoryId)
+                .collection('products')
+                .doc(item.productId);
+
+            batch.update(docRef, {
+                price: item.price,
+                updatedAt: now,
+            });
+        }
+
+        await batch.commit();
+    }
+}
+
