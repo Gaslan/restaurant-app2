@@ -34,6 +34,14 @@ export const protectedRoutes: Routes = {
             pageContainerType: 'default',
         },
     },
+    '/price-editor/[menuId]': {
+        key: 'menu-management.price-editor',
+        authority: [],
+        meta: {
+            pageBackgroundType: 'plain',
+            pageContainerType: 'default',
+        },
+    },
     '/settings': {
         key: 'settings',
         authority: [],

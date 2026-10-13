@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import { toast } from 'sonner';
 import {
     TrendingUp,
@@ -20,9 +20,9 @@ import {
     Loader2,
     Search,
     Tag,
-    Layers,
     ArrowUp,
     ArrowDown,
+    ArrowLeft,
     ImageIcon,
 } from 'lucide-react';
 
@@ -111,10 +111,18 @@ function calculateNewPrice(
     return Math.round(newPrice * 100) / 100;
 }
 
-export function PriceEditorView() {
+interface PriceEditorViewProps {
+    targetMenuId?: string;
+}
+
+export function PriceEditorView({ targetMenuId }: PriceEditorViewProps = {}) {
     const router = useRouter();
+    const params = useParams();
     const searchParams = useSearchParams();
-    const initialMenuIdParam = searchParams.get('menuId');
+
+    // Menu ID priority: 1) prop targetMenuId, 2) route param /price-editor/[menuId], 3) search param ?menuId=...
+    const paramMenuId = (targetMenuId || params?.menuId) as string | undefined;
+    const initialMenuIdParam = paramMenuId || searchParams.get('menuId');
 
     // Menu and Restaurant data
     const [menus, setMenus] = useState<Menu[]>([]);
@@ -174,6 +182,11 @@ export function PriceEditorView() {
                     const targetId = matchedMenu ? matchedMenu.id : allMenus[0].id;
                     setSelectedMenuId(targetId);
                     await fetchMenuDetails(targetId);
+
+                    // If user reached /price-editor without a path param, update URL to match target menu
+                    if (!paramMenuId && typeof window !== 'undefined') {
+                        router.replace(`/price-editor/${targetId}`);
+                    }
                 }
             } catch (error) {
                 console.error('Failed to load menus for price editor:', error);
@@ -184,7 +197,7 @@ export function PriceEditorView() {
         }
 
         init();
-    }, [initialMenuIdParam]);
+    }, [initialMenuIdParam, paramMenuId, router]);
 
     // Fetch details for selected menu
     const fetchMenuDetails = useCallback(async (menuId: string) => {
@@ -224,25 +237,6 @@ export function PriceEditorView() {
             setIsMenuDetailsLoading(false);
         }
     }, []);
-
-    // Menu selection change
-    const handleMenuChange = async (menuId: string) => {
-        if (menuId === selectedMenuId) return;
-
-        // Check if there are unsaved changes
-        const modifiedCount = countModifiedProducts;
-        if (modifiedCount > 0) {
-            const confirmed = window.confirm(
-                'Kaydedilmemiş fiyat değişiklikleriniz var. Başka bir menüye geçerseniz bu değişiklikler kaybolacak. Devam etmek istiyor musunuz?'
-            );
-            if (!confirmed) return;
-        }
-
-        setSelectedMenuId(menuId);
-        setSelectedProductIds([]);
-        setDraftPrices({});
-        await fetchMenuDetails(menuId);
-    };
 
     // Flatten all products across all categories
     const allProducts = useMemo(() => {
@@ -503,47 +497,44 @@ export function PriceEditorView() {
 
     return (
         <div className="w-full space-y-6 px-4 sm:px-6 py-4 pb-28">
-            {/* Header: Title and Menu Switcher */}
+            {/* Header: Title and Back to Menus Button */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-gray-100 dark:border-gray-800">
                 <div className="space-y-1">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                        <div className="p-2.5 rounded-xl bg-primary/10 text-primary">
                             <Tag className="h-6 w-6" />
                         </div>
                         <div>
-                            <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-                                Fiyat Editörü
-                            </h1>
-                            <p className="text-xs sm:text-sm text-muted-foreground">
-                                Ürün fiyatlarını liste üzerinden tek tek veya yukarıdaki panelden toplu olarak güncelleyin.
+                            <div className="flex items-center gap-2.5 flex-wrap">
+                                <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+                                    Fiyat Editörü
+                                </h1>
+                                {currentMenu?.name && (
+                                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-primary/10 text-primary border border-primary/20">
+                                        {currentMenu.name}
+                                    </span>
+                                )}
+                            </div>
+                            <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                                {currentMenu?.name
+                                    ? `"${currentMenu.name}" menüsündeki tüm ürünlerin fiyatlarını tek tek veya yukarıdaki panelden toplu olarak güncelleyin.`
+                                    : 'Ürün fiyatlarını liste üzerinden tek tek veya yukarıdaki panelden toplu olarak güncelleyin.'}
                             </p>
                         </div>
                     </div>
                 </div>
 
-                {/* Menu Selection Dropdown */}
-                <div className="flex items-center gap-3">
-                    <span className="text-xs font-semibold text-muted-foreground whitespace-nowrap">
-                        Menü:
-                    </span>
-                    <div className="min-w-[200px]">
-                        <Select
-                            options={menus.map((m) => ({
-                                value: m.id,
-                                label: m.name,
-                            }))}
-                            value={
-                                menus
-                                    .map((m) => ({ value: m.id, label: m.name }))
-                                    .find((m) => m.value === selectedMenuId) || null
-                            }
-                            onChange={(opt: any) => {
-                                if (opt?.value) {
-                                    handleMenuChange(opt.value);
-                                }
-                            }}
-                        />
-                    </div>
+                {/* Back to Menus Button */}
+                <div className="flex items-center gap-2 self-start md:self-auto">
+                    <Button
+                        variant="default"
+                        size="sm"
+                        className="rounded-xl flex items-center gap-1.5"
+                        onClick={() => router.push('/menus')}
+                        icon={<ArrowLeft className="h-4 w-4" />}
+                    >
+                        <span>Menülere Dön</span>
+                    </Button>
                 </div>
             </div>
 

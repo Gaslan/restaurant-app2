@@ -47,7 +47,6 @@ import { ProductDrawer } from '@/views/admin/products/product-drawer';
 import { DeleteProductDialog } from '@/views/admin/products/delete-product-dialog';
 import { CategoryReorderModal } from './category-reorder-modal';
 import { CategorySection } from './category-section';
-import { BatchPriceModal } from './batch-price-modal';
 
 export function Menu2View() {
     const router = useRouter();
@@ -107,7 +106,6 @@ export function Menu2View() {
     const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
     const [batchDeleteConfirmOpen, setBatchDeleteConfirmOpen] = useState(false);
     const [isBatchDeleting, setIsBatchDeleting] = useState(false);
-    const [batchPriceModalOpen, setBatchPriceModalOpen] = useState(false);
 
     // 1. Initial Load: Fetch all menus & restaurant info
     useEffect(() => {
@@ -935,39 +933,15 @@ export function Menu2View() {
                                     Vazgeç
                                 </Button>
 
-                                <Dropdown
-                                    placement="top-end"
-                                    renderTitle={
-                                        <Button
-                                            size="sm"
-                                            variant="solid"
-                                            className="rounded-full flex items-center gap-1.5"
-                                        >
-                                            <span>İşlemler</span>
-                                            <ChevronUp className="h-3.5 w-3.5" />
-                                        </Button>
-                                    }
+                                <Button
+                                    size="sm"
+                                    variant="solid"
+                                    className="rounded-full flex items-center gap-1.5 bg-red-600 hover:bg-red-700 text-white"
+                                    onClick={() => setBatchDeleteConfirmOpen(true)}
                                 >
-                                    <Dropdown.Item
-                                        eventKey="change-price"
-                                        onClick={() => router.push(`/price-editor?menuId=${selectedMenuId}`)}
-                                        className="flex items-center gap-2 cursor-pointer"
-                                    >
-                                        <Tag className="h-4 w-4 text-gray-500" />
-                                        <span>Fiyat Editörü</span>
-                                    </Dropdown.Item>
-
-                                    <Dropdown.Item variant="divider" />
-
-                                    <Dropdown.Item
-                                        eventKey="batch-delete"
-                                        onClick={() => setBatchDeleteConfirmOpen(true)}
-                                        className="flex items-center gap-2 cursor-pointer text-red-600 hover:text-red-600 dark:text-red-400"
-                                    >
-                                        <Trash2 className="h-4 w-4 text-red-500" />
-                                        <span>Sil</span>
-                                    </Dropdown.Item>
-                                </Dropdown>
+                                    <Trash2 className="h-3.5 w-3.5" />
+                                    <span>Sil</span>
+                                </Button>
                             </div>
                         </div>
                     )}
@@ -987,17 +961,6 @@ export function Menu2View() {
                             Seçilen <strong>{selectedProductIds.length}</strong> ürünü silmek istediğinize emin misiniz? Bu işlem geri alınamaz.
                         </p>
                     </ConfirmDialog>
-
-                    {/* Batch Price Change Modal */}
-                    <BatchPriceModal
-                        open={batchPriceModalOpen}
-                        onOpenChange={setBatchPriceModalOpen}
-                        selectedCount={selectedProductIds.length}
-                        currency={currency}
-                        onApply={(formData) => {
-                            console.log('Batch price data:', formData);
-                        }}
-                    />
                 </>
             )}
         </div>

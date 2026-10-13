@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Loader2, ChevronRight, Eye, Smartphone } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, ChevronRight, Eye, Smartphone, MoreVertical, Tag } from 'lucide-react';
 
 import {
     Table,
@@ -14,7 +14,7 @@ import type { Menu } from '@/types';
 import type { MenuFormData } from '@/lib/validations';
 // import { MenuDrawer } from '@/components/admin/menus/menu-drawer';
 import { DeleteMenuDialog } from '@/views/admin/menus/delete-menu-dialog';
-import { Badge, Button, Switcher } from '@/components/ui';
+import { Badge, Button, Switcher, Dropdown } from '@/components/ui';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '@/components/ui/vaul-drawer';
 import Container from '@/components/shared/Container';
 import AdaptiveCard from '@/components/shared/AdaptiveCard';
@@ -216,29 +216,64 @@ export default function MenusPage() {
                                                 innerClass={classNames('bg-white text-gray-500', menu.isActive ? 'text-green-500' : 'text-gray-400')} />
                                         </Table.Td>
                                         <Table.Td className="text-right p-4">
-                                            {/* Desktop: Show full controls */}
-                                            <div className="hidden md:flex gap-2 justify-end items-center" onClick={(e) => e.stopPropagation()}>
+                                            {/* Desktop: Keep Switcher outside, move actions into Dropdown */}
+                                            <div className="hidden md:flex gap-3 justify-end items-center" onClick={(e) => e.stopPropagation()}>
                                                 <Switcher
                                                     checked={menu.isActive}
                                                     onChange={(checked: boolean) => handleToggleActive(menu, checked)}
                                                     aria-label="Toggle menu active status"
                                                 />
 
-                                                <Button
-                                                    size="xs"
-                                                    icon={<Pencil className="h-3.5 w-3.5" />}
-                                                    onClick={() => openEditDialog(menu)}
+                                                <Dropdown
+                                                    placement="bottom-end"
+                                                    renderTitle={
+                                                        <Button
+                                                            shape="circle"
+                                                            variant="plain"
+                                                            size="xs"
+                                                            className="h-8 w-8 p-0 text-muted-foreground hover:text-gray-900 dark:hover:text-gray-100"
+                                                            icon={<MoreVertical className="h-4 w-4" />}
+                                                        />
+                                                    }
                                                 >
+                                                    <Dropdown.Item
+                                                        eventKey="price-editor"
+                                                        onClick={() => router.push(`/price-editor/${menu.id}`)}
+                                                        className="flex items-center gap-2 cursor-pointer"
+                                                    >
+                                                        <Tag className="h-4 w-4 text-gray-500" />
+                                                        <span>Toplu Fiyat Güncelle</span>
+                                                    </Dropdown.Item>
 
-                                                    Edit
-                                                </Button>
-                                                <Button
-                                                    size="xs"
-                                                    icon={<Trash2 className="h-3.5 w-3.5" />}
-                                                    onClick={() => openDeleteDialog(menu)}
-                                                >
-                                                    Delete
-                                                </Button>
+                                                    <Dropdown.Item
+                                                        eventKey="view"
+                                                        onClick={() => router.push(`/menus/${menu.id}`)}
+                                                        className="flex items-center gap-2 cursor-pointer"
+                                                    >
+                                                        <Eye className="h-4 w-4 text-gray-500" />
+                                                        <span>View Details</span>
+                                                    </Dropdown.Item>
+
+                                                    <Dropdown.Item
+                                                        eventKey="edit"
+                                                        onClick={() => openEditDialog(menu)}
+                                                        className="flex items-center gap-2 cursor-pointer"
+                                                    >
+                                                        <Pencil className="h-4 w-4 text-gray-500" />
+                                                        <span>Edit</span>
+                                                    </Dropdown.Item>
+
+                                                    <Dropdown.Item variant="divider" />
+
+                                                    <Dropdown.Item
+                                                        eventKey="delete"
+                                                        onClick={() => openDeleteDialog(menu)}
+                                                        className="flex items-center gap-2 cursor-pointer text-red-600 hover:text-red-600 dark:text-red-400"
+                                                    >
+                                                        <Trash2 className="h-4 w-4 text-red-500" />
+                                                        <span>Delete</span>
+                                                    </Dropdown.Item>
+                                                </Dropdown>
                                             </div>
                                             {/* Mobile: Show chevron */}
                                             <div className="md:hidden flex justify-end">
@@ -297,6 +332,22 @@ export default function MenusPage() {
                                 }}
                             />
                         </div>
+
+                        {/* Toplu Fiyat Güncelle */}
+                        <Button
+                            size={'lg'}
+                            variant="default"
+                            icon={<Tag className="h-4 w-4" />}
+                            className="w-full justify-start"
+                            onClick={() => {
+                                if (drawerMenu) {
+                                    setDrawerOpen(false);
+                                    router.push(`/price-editor/${drawerMenu.id}`);
+                                }
+                            }}
+                        >
+                            <span>Toplu Fiyat Güncelle</span>
+                        </Button>
 
                         {/* View Details */}
                         <Button
