@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, useParams } from 'next/navigation';
 import { toast } from 'sonner';
 import {
     DndContext,
@@ -68,10 +68,16 @@ import { CategoryReorderModal } from './category-reorder-modal';
 import { CategorySection } from './category-section';
 import { ProductDragOverlayItem } from './sortable-product-row';
 
-export function Menu2View() {
+interface Menu2ViewProps {
+    targetMenuId?: string;
+}
+
+export function Menu2View({ targetMenuId }: Menu2ViewProps = {}) {
     const router = useRouter();
+    const params = useParams();
     const searchParams = useSearchParams();
-    const initialMenuIdParam = searchParams.get('menuId');
+    const paramMenuId = (targetMenuId || params?.menuId) as string | undefined;
+    const initialMenuIdParam = paramMenuId || searchParams.get('menuId');
 
     const [menus, setMenus] = useState<Menu[]>([]);
     const [selectedMenuId, setSelectedMenuId] = useState<string>('');
@@ -1001,6 +1007,15 @@ export function Menu2View() {
 
                         {currentMenu && (
                             <>
+                                <Dropdown.Item
+                                    eventKey="price-editor"
+                                    onClick={() => router.push(`/menus/${currentMenu.id}/price-editor`)}
+                                    className="flex items-center gap-2 cursor-pointer"
+                                >
+                                    <Tag className="h-4 w-4 text-gray-500" />
+                                    <span>Fiyat Editörü</span>
+                                </Dropdown.Item>
+
                                 <Dropdown.Item variant="divider" />
                                 <Dropdown.Item
                                     eventKey="qr-settings"

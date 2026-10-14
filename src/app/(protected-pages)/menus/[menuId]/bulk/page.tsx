@@ -1,8 +1,14 @@
 import { Suspense } from 'react';
-import { PriceEditorView } from '@/views/admin/price-editor/price-editor-view';
+import { Menu2View } from '@/views/admin/menu2/menu2-view';
 import { Loader2 } from 'lucide-react';
 
-export default function PriceEditorPage() {
+export default async function MenuBulkPage({
+    params,
+}: {
+    params: Promise<{ menuId: string }>;
+}) {
+    const { menuId } = await params;
+
     return (
         <div className="w-full">
             <Suspense
@@ -12,7 +18,7 @@ export default function PriceEditorPage() {
                     </div>
                 }
             >
-                <PriceEditorView />
+                <Menu2View targetMenuId={menuId} />
             </Suspense>
         </div>
     );

@@ -15,9 +15,8 @@ export async function updateProductPrices(updates: PriceUpdateInput[]) {
     try {
         await batchUpdateProductPrices(updates);
 
-        revalidatePath('/price-editor');
         revalidatePath('/menus');
-        revalidatePath('/menu2');
+        revalidatePath('/menus', 'layout');
 
         return { success: true };
     } catch (error) {

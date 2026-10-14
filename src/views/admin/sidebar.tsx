@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Settings, Menu as MenuIcon, ChevronRight, Store, QrCode, Smartphone, LayoutList, Tag } from 'lucide-react';
+import { Home, Settings, Menu as MenuIcon, ChevronRight, Store, QrCode, Smartphone } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 import { authClient } from '@/lib/auth-client';
@@ -27,24 +27,8 @@ const navigationItems: NavigationItem[] = [
     },
     {
         title: 'Menü Yönetimi',
+        href: '/menus',
         icon: MenuIcon,
-        children: [
-            {
-                title: 'Menüler',
-                href: '/menus',
-                icon: MenuIcon,
-            },
-            {
-                title: 'Menü 2',
-                href: '/menu2',
-                icon: LayoutList,
-            },
-            {
-                title: 'Fiyat Editörü',
-                href: '/price-editor',
-                icon: Tag,
-            }
-        ]
     },
     {
         title: 'Ayarlar',

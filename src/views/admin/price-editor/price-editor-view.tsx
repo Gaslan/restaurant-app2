@@ -120,7 +120,7 @@ export function PriceEditorView({ targetMenuId }: PriceEditorViewProps = {}) {
     const params = useParams();
     const searchParams = useSearchParams();
 
-    // Menu ID priority: 1) prop targetMenuId, 2) route param /price-editor/[menuId], 3) search param ?menuId=...
+    // Menu ID priority: 1) prop targetMenuId, 2) route param /menus/[menuId]/price-editor, 3) search param ?menuId=...
     const paramMenuId = (targetMenuId || params?.menuId) as string | undefined;
     const initialMenuIdParam = paramMenuId || searchParams.get('menuId');
 
@@ -183,9 +183,9 @@ export function PriceEditorView({ targetMenuId }: PriceEditorViewProps = {}) {
                     setSelectedMenuId(targetId);
                     await fetchMenuDetails(targetId);
 
-                    // If user reached /price-editor without a path param, update URL to match target menu
+                    // If user reached without a path param, update URL to match target menu
                     if (!paramMenuId && typeof window !== 'undefined') {
-                        router.replace(`/price-editor/${targetId}`);
+                        router.replace(`/menus/${targetId}/price-editor`);
                     }
                 }
             } catch (error) {

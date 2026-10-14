@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import type { Product } from '@/types';
-import { Flame, Timer, AlertCircle } from 'lucide-react';
+import { type Product, getAllergenDisplay, getContentWarningDisplay, isDiscountActive } from '@/types';
+import { Flame, Timer, AlertCircle, AlertTriangle } from 'lucide-react';
 
 interface QrProductDrawerProps {
     isOpen: boolean;
@@ -388,6 +388,20 @@ export function QrProductDrawer({
                                 formatPrice(
                                     product.variations[selectedVariationIndex]?.price || product.price
                                 )
+                            ) : isDiscountActive(product) ? (
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-emerald-700 font-extrabold text-xl">
+                                        {formatPrice(product.discount!.discountedPrice)}
+                                    </span>
+                                    <span className="text-sm text-zinc-400 line-through font-normal">
+                                        {formatPrice(product.price)}
+                                    </span>
+                                    {product.price > product.discount!.discountedPrice && (
+                                        <span className="text-[11px] font-semibold bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded">
+                                            %{Math.round(((product.price - product.discount!.discountedPrice) / product.price) * 100)} İndirim
+                                        </span>
+                                    )}
+                                </div>
                             ) : (
                                 formatPrice(product.price)
                             )}
@@ -468,14 +482,49 @@ export function QrProductDrawer({
 
                     {/* Allergens */}
                     {product.allergens && product.allergens.length > 0 && (
-                        <div className="pt-2 px-4 border-t border-[#E7E3DA]">
-                            <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 mb-1">
+                        <div className="pt-2.5 px-4 border-t border-[#E7E3DA]">
+                            <div className="flex items-center gap-1.5 text-xs font-semibold text-amber-700 mb-1.5">
                                 <AlertCircle className="w-3.5 h-3.5" />
                                 <span>Alerjen Uyarısı</span>
                             </div>
-                            <p className="text-xs text-[#6B6862]">
-                                İçerir: {product.allergens.join(', ')}
-                            </p>
+                            <div className="flex flex-wrap gap-1.5">
+                                {product.allergens.map((item) => {
+                                    const display = getAllergenDisplay(item);
+                                    return (
+                                        <span
+                                            key={item}
+                                            className="inline-flex items-center gap-1 text-[11px] bg-amber-50 text-amber-900 border border-amber-200/60 px-2 py-0.5 rounded-md font-medium"
+                                        >
+                                            {display.icon && <span>{display.icon}</span>}
+                                            <span>{display.label}</span>
+                                        </span>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Content Warnings */}
+                    {product.contentWarnings && product.contentWarnings.length > 0 && (
+                        <div className="pt-2.5 px-4 border-t border-[#E7E3DA]">
+                            <div className="flex items-center gap-1.5 text-xs font-semibold text-rose-700 mb-1.5">
+                                <AlertTriangle className="w-3.5 h-3.5" />
+                                <span>İçerik Uyarıları</span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                                {product.contentWarnings.map((item) => {
+                                    const display = getContentWarningDisplay(item);
+                                    return (
+                                        <span
+                                            key={item}
+                                            className="inline-flex items-center gap-1 text-[11px] bg-rose-50 text-rose-900 border border-rose-200/60 px-2 py-0.5 rounded-md font-medium"
+                                        >
+                                            {display.icon && <span>{display.icon}</span>}
+                                            <span>{display.label}</span>
+                                        </span>
+                                    );
+                                })}
+                            </div>
                         </div>
                     )}
                 </div>

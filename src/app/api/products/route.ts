@@ -81,6 +81,9 @@ export async function POST(request: NextRequest) {
             available: productData.available ?? true,
             active: productData.active ?? true,
             tags: productData.tags ?? [],
+            allergens: productData.allergens ?? [],
+            contentWarnings: productData.contentWarnings ?? [],
+            discount: productData.discount ?? null,
         };
 
         if (!menuId) {

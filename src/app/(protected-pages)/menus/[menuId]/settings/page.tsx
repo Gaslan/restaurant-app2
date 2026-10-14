@@ -1,8 +1,14 @@
 import { Suspense } from 'react';
-import { PriceEditorView } from '@/views/admin/price-editor/price-editor-view';
+import type { Metadata } from 'next';
+import { MenuSettingsView } from '@/views/admin/menus/menu-settings-view';
 import { Loader2 } from 'lucide-react';
 
-export default async function PriceEditorMenuPage({
+export const metadata: Metadata = {
+    title: 'Menü Görünüm Ayarları',
+    description: 'Menüye özel görünüm ve yerleşim ayarlarını düzenleyin.',
+};
+
+export default async function MenuSettingsPage({
     params,
 }: {
     params: Promise<{ menuId: string }>;
@@ -18,7 +24,7 @@ export default async function PriceEditorMenuPage({
                     </div>
                 }
             >
-                <PriceEditorView targetMenuId={menuId} />
+                <MenuSettingsView menuId={menuId} />
             </Suspense>
         </div>
     );

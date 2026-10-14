@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
-import { Plus, Pencil, Trash2, Loader2, ChevronRight, Eye, Smartphone, MoreVertical, Tag } from 'lucide-react';
+import { Plus, Pencil, Trash2, Loader2, ChevronRight, Eye, Smartphone, MoreVertical, Tag, Sliders } from 'lucide-react';
 
 import {
     Table,
@@ -257,7 +257,7 @@ export default function MenusPage() {
                                                     
                                                     <Dropdown.Item
                                                         eventKey="menu-item"
-                                                        onClick={() => router.push(`/menu2?menuId=${menu.id}`)}
+                                                        onClick={() => router.push(`/menus/${menu.id}/bulk`)}
                                                         className="flex items-center gap-2 cursor-pointer"
                                                     >
                                                         <Tag className="h-4 w-4 text-gray-500" />
@@ -266,11 +266,20 @@ export default function MenusPage() {
 
                                                     <Dropdown.Item
                                                         eventKey="price-editor"
-                                                        onClick={() => router.push(`/price-editor/${menu.id}`)}
+                                                        onClick={() => router.push(`/menus/${menu.id}/price-editor`)}
                                                         className="flex items-center gap-2 cursor-pointer"
                                                     >
                                                         <Tag className="h-4 w-4 text-gray-500" />
                                                         <span>Toplu Fiyat Güncelle</span>
+                                                    </Dropdown.Item>
+
+                                                    <Dropdown.Item
+                                                        eventKey="settings"
+                                                        onClick={() => router.push(`/menus/${menu.id}/settings`)}
+                                                        className="flex items-center gap-2 cursor-pointer"
+                                                    >
+                                                        <Sliders className="h-4 w-4 text-gray-500" />
+                                                        <span>Görünüm Ayarları</span>
                                                     </Dropdown.Item>
 
                                                     <Dropdown.Item variant="divider" />
@@ -382,7 +391,7 @@ export default function MenusPage() {
                             onClick={() => {
                                 if (drawerMenu) {
                                     setDrawerOpen(false);
-                                    router.push(`/menu2?menuId=${drawerMenu.id}`);
+                                    router.push(`/menus/${drawerMenu.id}/bulk`);
                                 }
                             }}
                         >
@@ -399,11 +408,27 @@ export default function MenusPage() {
                             onClick={() => {
                                 if (drawerMenu) {
                                     setDrawerOpen(false);
-                                    router.push(`/price-editor/${drawerMenu.id}`);
+                                    router.push(`/menus/${drawerMenu.id}/price-editor`);
                                 }
                             }}
                         >
                             <span>Toplu Fiyat Güncelle</span>
+                        </Button>
+
+                        {/* Görünüm Ayarları */}
+                        <Button
+                            size={'lg'}
+                            variant="default"
+                            icon={<Sliders className="h-4 w-4" />}
+                            className="w-full justify-start"
+                            onClick={() => {
+                                if (drawerMenu) {
+                                    setDrawerOpen(false);
+                                    router.push(`/menus/${drawerMenu.id}/settings`);
+                                }
+                            }}
+                        >
+                            <span>Görünüm Ayarları</span>
                         </Button>
 
                         {/* Delete Button */}

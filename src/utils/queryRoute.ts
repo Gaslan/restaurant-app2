@@ -49,6 +49,16 @@ export const matchRoute = (path: string): Route | null => {
         }
     }
 
+    // Fallback: If no direct or dynamic route matched, try parent path matching (e.g. /menus/... -> /menus)
+    if (!bestMatch) {
+        for (let i = inputSegments.length - 1; i > 0; i--) {
+            const parentPath = '/' + inputSegments.slice(0, i).join('/')
+            if (routes[parentPath]) {
+                return routes[parentPath]
+            }
+        }
+    }
+
     return bestMatch
 }
 

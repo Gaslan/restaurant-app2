@@ -1,5 +1,5 @@
 import { getFirestoreDb } from '../firebase-admin';
-import type { Menu, MenuWithDetails, Restaurant } from '@/types';
+import type { Menu, MenuAppearance, MenuWithDetails, Restaurant } from '@/types';
 import { FieldValue } from 'firebase-admin/firestore';
 import { getCategories } from './firestore-category.service';
 import { getProducts } from './firestore-product.service';
@@ -37,6 +37,15 @@ export async function getMenus(restaurantId: string): Promise<Menu[]> {
                 orderValue: data.orderValue,
                 isActive: data.isActive,
                 restaurantId: data.restaurantId,
+                appearance: {
+                    imagePosition: data.appearance?.imagePosition || 'right',
+                    showDescription: data.appearance?.showDescription ?? true,
+                    showPopular: data.appearance?.showPopular ?? false,
+                    popularLayout: data.appearance?.popularLayout || 'grid',
+                    showDiscounted: data.appearance?.showDiscounted ?? false,
+                    discountedLayout: data.appearance?.discountedLayout || 'grid',
+                    categoryNavLayout: data.appearance?.categoryNavLayout || 'text',
+                },
                 createdAt: data.createdAt?.toDate() || new Date(),
                 updatedAt: data.updatedAt?.toDate() || new Date(),
             });
@@ -78,6 +87,15 @@ export async function getMenuById(
             orderValue: data.orderValue,
             isActive: data.isActive,
             restaurantId: data.restaurantId,
+            appearance: {
+                imagePosition: data.appearance?.imagePosition || 'right',
+                showDescription: data.appearance?.showDescription ?? true,
+                showPopular: data.appearance?.showPopular ?? false,
+                popularLayout: data.appearance?.popularLayout || 'grid',
+                showDiscounted: data.appearance?.showDiscounted ?? false,
+                discountedLayout: data.appearance?.discountedLayout || 'grid',
+                categoryNavLayout: data.appearance?.categoryNavLayout || 'text',
+            },
             createdAt: data.createdAt?.toDate() || new Date(),
             updatedAt: data.updatedAt?.toDate() || new Date(),
         };
@@ -92,7 +110,7 @@ export async function getMenuById(
  */
 export async function createMenu(
     restaurantId: string,
-    data: { name: string; isActive: boolean; orderValue?: number }
+    data: { name: string; isActive: boolean; orderValue?: number; appearance?: MenuAppearance }
 ): Promise<Menu> {
     const db = getFirestoreDb();
 
@@ -124,6 +142,15 @@ export async function createMenu(
             orderValue,
             isActive: data.isActive,
             restaurantId,
+            appearance: {
+                imagePosition: data.appearance?.imagePosition || 'right',
+                showDescription: data.appearance?.showDescription ?? true,
+                showPopular: data.appearance?.showPopular ?? false,
+                popularLayout: data.appearance?.popularLayout || 'grid',
+                showDiscounted: data.appearance?.showDiscounted ?? false,
+                discountedLayout: data.appearance?.discountedLayout || 'grid',
+                categoryNavLayout: data.appearance?.categoryNavLayout || 'text',
+            },
             createdAt: now,
             updatedAt: now,
         };
@@ -140,6 +167,15 @@ export async function createMenu(
             orderValue: createdData.orderValue,
             isActive: createdData.isActive,
             restaurantId: createdData.restaurantId,
+            appearance: {
+                imagePosition: createdData.appearance?.imagePosition || 'right',
+                showDescription: createdData.appearance?.showDescription ?? true,
+                showPopular: createdData.appearance?.showPopular ?? false,
+                popularLayout: createdData.appearance?.popularLayout || 'grid',
+                showDiscounted: createdData.appearance?.showDiscounted ?? false,
+                discountedLayout: createdData.appearance?.discountedLayout || 'grid',
+                categoryNavLayout: createdData.appearance?.categoryNavLayout || 'text',
+            },
             createdAt: createdData.createdAt?.toDate() || new Date(),
             updatedAt: createdData.updatedAt?.toDate() || new Date(),
         };
@@ -155,7 +191,7 @@ export async function createMenu(
 export async function updateMenu(
     restaurantId: string,
     menuId: string,
-    data: Partial<{ name: string; isActive: boolean; orderValue: number }>
+    data: Partial<{ name: string; isActive: boolean; orderValue: number; appearance: MenuAppearance }>
 ): Promise<Menu> {
     const db = getFirestoreDb();
 
@@ -177,6 +213,11 @@ export async function updateMenu(
             updatedAt: FieldValue.serverTimestamp(),
         };
 
+        // Remove undefined fields
+        Object.keys(updateData).forEach(key =>
+            updateData[key] === undefined && delete updateData[key]
+        );
+
         await menuRef.update(updateData);
 
         // Fetch updated document
@@ -189,6 +230,15 @@ export async function updateMenu(
             orderValue: updatedData.orderValue,
             isActive: updatedData.isActive,
             restaurantId: updatedData.restaurantId,
+            appearance: {
+                imagePosition: updatedData.appearance?.imagePosition || 'right',
+                showDescription: updatedData.appearance?.showDescription ?? true,
+                showPopular: updatedData.appearance?.showPopular ?? false,
+                popularLayout: updatedData.appearance?.popularLayout || 'grid',
+                showDiscounted: updatedData.appearance?.showDiscounted ?? false,
+                discountedLayout: updatedData.appearance?.discountedLayout || 'grid',
+                categoryNavLayout: updatedData.appearance?.categoryNavLayout || 'text',
+            },
             createdAt: updatedData.createdAt?.toDate() || new Date(),
             updatedAt: updatedData.updatedAt?.toDate() || new Date(),
         };

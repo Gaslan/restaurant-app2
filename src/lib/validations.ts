@@ -72,9 +72,20 @@ export const productSchema = z.object({
         unit: z.string().min(1, 'Birim seçilmeli veya girilmelidir'),
         price: z.number().min(0, 'Fiyat 0 veya daha büyük olmalıdır'),
     })).optional(),
+    discount: z.object({
+        enabled: z.boolean(),
+        discountedPrice: z.number().min(0, 'İndirimli fiyat 0 veya daha büyük olmalıdır'),
+        hasSchedule: z.boolean().optional(),
+        startDate: z.string().optional(),
+        endDate: z.string().optional(),
+        startTime: z.string().optional(),
+        endTime: z.string().optional(),
+        days: z.array(z.string()).optional(),
+    }).optional(),
     calories: z.number().min(0).optional(),
     cookingTime: z.number().min(0).optional(),
     allergens: z.array(z.string()).optional(),
+    contentWarnings: z.array(z.string()).optional(),
 });
 
 export type ProductFormData = z.infer<typeof productSchema>;

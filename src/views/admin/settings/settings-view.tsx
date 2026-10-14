@@ -10,7 +10,6 @@ import {
     TbPalette,
     TbShare,
     TbChevronDown,
-    TbCheck,
 } from 'react-icons/tb';
 import {
     FaInstagram,
@@ -25,6 +24,7 @@ import {
 import { apiGet, apiPatch } from '@/lib/api';
 import type { Restaurant, SocialMedia, SocialPlatform, MenuWithDetails, Menu } from '@/types';
 import { QrMenuView } from '@/views/qr/qr-menu-view';
+import { ImageUpload } from '@/components/shared/image-upload';
 
 // Fallback demo menu for preview
 const DEMO_PREVIEW_MENU: MenuWithDetails = {
@@ -196,10 +196,8 @@ export function SettingsView() {
     const [initialGeneralData, setInitialGeneralData] = useState({ ...generalData });
 
     // Appearance State
-    const [imagePosition, setImagePosition] = useState<'right' | 'left' | 'top' | 'grid'>('right');
-    const [initialImagePosition, setInitialImagePosition] = useState<'right' | 'left' | 'top' | 'grid'>('right');
-    const [showDescription, setShowDescription] = useState<boolean>(true);
-    const [initialShowDescription, setInitialShowDescription] = useState<boolean>(true);
+    const [headerImageUrl, setHeaderImageUrl] = useState<string | null>(null);
+    const [initialHeaderImageUrl, setInitialHeaderImageUrl] = useState<string | null>(null);
 
     // Social Media State
     const [socialData, setSocialData] = useState<Record<string, string>>({
@@ -260,13 +258,9 @@ export function SettingsView() {
                     setGeneralData(gen);
                     setInitialGeneralData(gen);
 
-                    const pos = r.appearance?.imagePosition || 'right';
-                    setImagePosition(pos);
-                    setInitialImagePosition(pos);
-
-                    const descVisible = r.appearance?.showDescription !== false;
-                    setShowDescription(descVisible);
-                    setInitialShowDescription(descVisible);
+                    const headerImg = r.appearance?.headerImageUrl || null;
+                    setHeaderImageUrl(headerImg);
+                    setInitialHeaderImageUrl(headerImg);
 
                     const sMap: Record<string, string> = {
                         instagram: '',
@@ -352,8 +346,7 @@ export function SettingsView() {
             phone: generalData.phone,
             email: generalData.email,
             appearance: {
-                imagePosition: imagePosition,
-                showDescription: showDescription,
+                headerImageUrl: headerImageUrl,
             },
             socialMedia: formatSocialMediaList(socialData),
             currency: restaurant?.currency || 'TRY',
@@ -361,7 +354,7 @@ export function SettingsView() {
             createdAt: restaurant?.createdAt || new Date(),
             updatedAt: new Date(),
         };
-    }, [restaurant, generalData, imagePosition, showDescription, socialData]);
+    }, [restaurant, generalData, headerImageUrl, socialData]);
 
     // Save Handlers
     const handleSaveGeneral = async (e?: React.FormEvent) => {
@@ -399,15 +392,13 @@ export function SettingsView() {
         try {
             const payload = {
                 appearance: {
-                    imagePosition: imagePosition,
-                    showDescription: showDescription,
+                    headerImageUrl: headerImageUrl,
                 },
             };
             const res = await apiPatch<Restaurant>('/api/restaurant', payload);
             if (res.data) {
                 setRestaurant((prev) => ({ ...prev, ...res.data } as Restaurant));
-                setInitialImagePosition(imagePosition);
-                setInitialShowDescription(showDescription);
+                setInitialHeaderImageUrl(headerImageUrl);
             }
             toast.success('Appearance settings saved successfully');
         } catch (error) {
@@ -610,7 +601,7 @@ export function SettingsView() {
                                         Appearance
                                     </h4>
                                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
-                                        Menüdeki ürün fotoğraflarının yerleşimi ve açıklama alanlarının görünümü
+                                        QR menü başlık görseli ve genel görünüm ayarları
                                     </p>
                                 </div>
                             </div>
@@ -626,252 +617,23 @@ export function SettingsView() {
                         {/* Collapsible Content */}
                         {expandedPanel === 'appearance' && (
                             <div className="px-6 pb-6 pt-2 border-t border-gray-100 dark:border-gray-700/60 space-y-5">
+                                {/* Setting: Header Background Image */}
                                 <div>
                                     <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">
-                                        Ürün Görseli Yerleşimi
+                                        QR Menü Başlık Arka Plan Görseli
                                     </label>
                                     <p className="text-xs text-gray-500 mb-4">
-                                        Seçtiğiniz düzen sağdaki canlı önizlemede anında aktifleşir.
+                                        QR menünüzün en üstünde ziyaretçileri karşılayan geniş arka plan kapak fotoğrafı. (Önerilen oran: 16:9 veya 414x230 px)
                                     </p>
 
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-                                        
-                                        {/* Option: RIGHT */}
-                                        <div
-                                            onClick={() => setImagePosition('right')}
-                                            className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
-                                                imagePosition === 'right'
-                                                    ? 'border-primary bg-primary/5 ring-1 ring-primary shadow-xs'
-                                                    : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-900'
-                                            }`}
-                                        >
-                                            {/* Mini Schematic View */}
-                                            <div className="w-full h-20 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-2 flex items-center justify-between gap-2 mb-3">
-                                                <div className="space-y-1.5 flex-1">
-                                                    <div className="w-3/4 h-2 bg-gray-300 dark:bg-gray-600 rounded-xs" />
-                                                    <div className="w-1/2 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-xs" />
-                                                    <div className="w-1/3 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-xs mt-1" />
-                                                </div>
-                                                <div className="w-11 h-11 rounded-md bg-amber-100/90 border border-amber-300/60 dark:bg-amber-900/40 shrink-0 flex items-center justify-center text-[10px] text-amber-800 dark:text-amber-200 font-bold">
-                                                    Resim
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-xs font-bold heading-text">
-                                                    Sağda (Klasik)
-                                                </span>
-                                                {imagePosition === 'right' && (
-                                                    <div className="w-4 h-4 rounded-full bg-primary text-white flex items-center justify-center">
-                                                        <TbCheck className="w-3 h-3" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <span className="text-[11px] text-gray-500 mt-0.5">
-                                                Metin solda, 72px resim sağda
-                                            </span>
-                                        </div>
-
-                                        {/* Option: LEFT */}
-                                        <div
-                                            onClick={() => setImagePosition('left')}
-                                            className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
-                                                imagePosition === 'left'
-                                                    ? 'border-primary bg-primary/5 ring-1 ring-primary shadow-xs'
-                                                    : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-900'
-                                            }`}
-                                        >
-                                            {/* Mini Schematic View */}
-                                            <div className="w-full h-20 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-2 flex items-center gap-2 mb-3">
-                                                <div className="w-11 h-11 rounded-md bg-amber-100/90 border border-amber-300/60 dark:bg-amber-900/40 shrink-0 flex items-center justify-center text-[10px] text-amber-800 dark:text-amber-200 font-bold">
-                                                    Resim
-                                                </div>
-                                                <div className="space-y-1.5 flex-1">
-                                                    <div className="w-3/4 h-2 bg-gray-300 dark:bg-gray-600 rounded-xs" />
-                                                    <div className="w-1/2 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-xs" />
-                                                    <div className="w-1/3 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-xs mt-1" />
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-xs font-bold heading-text">
-                                                    Solda
-                                                </span>
-                                                {imagePosition === 'left' && (
-                                                    <div className="w-4 h-4 rounded-full bg-primary text-white flex items-center justify-center">
-                                                        <TbCheck className="w-3 h-3" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <span className="text-[11px] text-gray-500 mt-0.5">
-                                                72px resim solda, metin sağda
-                                            </span>
-                                        </div>
-
-                                        {/* Option: TOP */}
-                                        <div
-                                            onClick={() => setImagePosition('top')}
-                                            className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
-                                                imagePosition === 'top'
-                                                    ? 'border-primary bg-primary/5 ring-1 ring-primary shadow-xs'
-                                                    : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-900'
-                                            }`}
-                                        >
-                                            {/* Mini Schematic View */}
-                                            <div className="w-full h-20 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-2 flex flex-col justify-between gap-1 mb-3">
-                                                <div className="w-full h-9 rounded bg-amber-100/90 border border-amber-300/60 dark:bg-amber-900/40 flex items-center justify-center text-[10px] text-amber-800 dark:text-amber-200 font-bold">
-                                                    Geniş Resim
-                                                </div>
-                                                <div className="flex items-center justify-between gap-2">
-                                                    <div className="w-2/3 h-2 bg-gray-300 dark:bg-gray-600 rounded-xs" />
-                                                    <div className="w-1/4 h-2 bg-gray-400 dark:bg-gray-500 rounded-xs" />
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-xs font-bold heading-text">
-                                                    Üstte (Kart)
-                                                </span>
-                                                {imagePosition === 'top' && (
-                                                    <div className="w-4 h-4 rounded-full bg-primary text-white flex items-center justify-center">
-                                                        <TbCheck className="w-3 h-3" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <span className="text-[11px] text-gray-500 mt-0.5">
-                                                Geniş resim üstte, detay altta
-                                            </span>
-                                        </div>
-
-                                        {/* Option: GRID (2'li Kart) */}
-                                        <div
-                                            onClick={() => setImagePosition('grid')}
-                                            className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
-                                                imagePosition === 'grid'
-                                                    ? 'border-primary bg-primary/5 ring-1 ring-primary shadow-xs'
-                                                    : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-900'
-                                            }`}
-                                        >
-                                            {/* Mini Schematic View */}
-                                            <div className="w-full h-20 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-2 flex items-center gap-2 mb-3">
-                                                {/* Col 1 */}
-                                                <div className="flex-1 h-full flex flex-col justify-between">
-                                                    <div className="w-full h-8 rounded-md bg-amber-100/90 border-2 border-amber-400 dark:bg-amber-900/40 dark:border-amber-600 flex items-center justify-center text-[8px] text-amber-800 dark:text-amber-200 font-bold">
-                                                        Resim
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <div className="w-4/5 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-xs" />
-                                                        <div className="w-1/2 h-1 bg-gray-400 dark:bg-gray-500 rounded-xs" />
-                                                    </div>
-                                                </div>
-                                                {/* Col 2 */}
-                                                <div className="flex-1 h-full flex flex-col justify-between">
-                                                    <div className="w-full h-8 rounded-md bg-amber-100/90 border-2 border-amber-400 dark:bg-amber-900/40 dark:border-amber-600 flex items-center justify-center text-[8px] text-amber-800 dark:text-amber-200 font-bold">
-                                                        Resim
-                                                    </div>
-                                                    <div className="space-y-1">
-                                                        <div className="w-4/5 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-xs" />
-                                                        <div className="w-1/2 h-1 bg-gray-400 dark:bg-gray-500 rounded-xs" />
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-xs font-bold heading-text">
-                                                    İkili Kart (2'li)
-                                                </span>
-                                                {imagePosition === 'grid' && (
-                                                    <div className="w-4 h-4 rounded-full bg-primary text-white flex items-center justify-center">
-                                                        <TbCheck className="w-3 h-3" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <span className="text-[11px] text-gray-500 mt-0.5">
-                                                Resim üstte, satırda 2 ürün
-                                            </span>
-                                        </div>
-
-                                    </div>
-                                </div>
-
-                                {/* Setting: Show / Hide Description */}
-                                <div className="pt-5 border-t border-gray-100 dark:border-gray-700/60">
-                                    <label className="block text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider mb-2">
-                                        Menü Açıklama Alanı
-                                    </label>
-                                    <p className="text-xs text-gray-500 mb-4">
-                                        QR menü ürün listeleme sayfasında ürün detay ve açıklama metinlerinin gösterilip gösterilmeyeceğini belirleyin.
-                                    </p>
-
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                                        {/* Option: Detaylar Görünsün */}
-                                        <div
-                                            onClick={() => setShowDescription(true)}
-                                            className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
-                                                showDescription
-                                                    ? 'border-primary bg-primary/5 ring-1 ring-primary shadow-xs'
-                                                    : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-900'
-                                            }`}
-                                        >
-                                            {/* Mini Schematic View */}
-                                            <div className="w-full h-20 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-2.5 flex flex-col justify-between mb-3">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="w-1/2 h-2 bg-gray-400 dark:bg-gray-500 rounded-xs" />
-                                                    <div className="w-1/5 h-2 bg-primary/70 rounded-xs" />
-                                                </div>
-                                                <div className="space-y-1.5 my-auto">
-                                                    <div className="w-full h-1.5 bg-gray-300 dark:bg-gray-600 rounded-xs" />
-                                                    <div className="w-3/4 h-1.5 bg-gray-300 dark:bg-gray-600 rounded-xs" />
-                                                </div>
-                                                <div className="w-1/4 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-xs" />
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-xs font-bold heading-text">
-                                                    Detaylar Görünsün
-                                                </span>
-                                                {showDescription && (
-                                                    <div className="w-4 h-4 rounded-full bg-primary text-white flex items-center justify-center">
-                                                        <TbCheck className="w-3 h-3" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <span className="text-[11px] text-gray-500 mt-0.5">
-                                                Açıklamalar ürün listesinde gösterilir
-                                            </span>
-                                        </div>
-
-                                        {/* Option: Gözükmesin */}
-                                        <div
-                                            onClick={() => setShowDescription(false)}
-                                            className={`p-4 rounded-xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
-                                                !showDescription
-                                                    ? 'border-primary bg-primary/5 ring-1 ring-primary shadow-xs'
-                                                    : 'border-gray-200 dark:border-gray-800 hover:border-gray-300 dark:hover:border-gray-700 bg-white dark:bg-gray-900'
-                                            }`}
-                                        >
-                                            {/* Mini Schematic View */}
-                                            <div className="w-full h-20 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-2.5 flex flex-col justify-between mb-3">
-                                                <div className="flex items-center justify-between">
-                                                    <div className="w-1/2 h-2 bg-gray-400 dark:bg-gray-500 rounded-xs" />
-                                                    <div className="w-1/5 h-2 bg-primary/70 rounded-xs" />
-                                                </div>
-                                                <div className="flex items-center justify-center py-2">
-                                                    <span className="text-[10px] text-gray-400 font-medium italic">
-                                                        Açıklama gizli
-                                                    </span>
-                                                </div>
-                                                <div className="w-1/4 h-1.5 bg-gray-200 dark:bg-gray-700 rounded-xs" />
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <span className="text-xs font-bold heading-text">
-                                                    Gözükmesin
-                                                </span>
-                                                {!showDescription && (
-                                                    <div className="w-4 h-4 rounded-full bg-primary text-white flex items-center justify-center">
-                                                        <TbCheck className="w-3 h-3" />
-                                                    </div>
-                                                )}
-                                            </div>
-                                            <span className="text-[11px] text-gray-500 mt-0.5">
-                                                Detay bilgisi gizlenir, sade görünüm
-                                            </span>
-                                        </div>
+                                    <div className="w-full">
+                                        <ImageUpload
+                                            value={headerImageUrl}
+                                            onChange={(url) => setHeaderImageUrl(url || null)}
+                                            folder="banners"
+                                            imageAlt="QR Menü Başlık Arka Plan Görseli"
+                                            maxSizeMB={10}
+                                        />
                                     </div>
                                 </div>
 
@@ -881,8 +643,7 @@ export function SettingsView() {
                                         type="button"
                                         disabled={isSavingAppearance}
                                         onClick={() => {
-                                            setImagePosition(initialImagePosition);
-                                            setShowDescription(initialShowDescription);
+                                            setHeaderImageUrl(initialHeaderImageUrl);
                                         }}
                                     >
                                         Discard

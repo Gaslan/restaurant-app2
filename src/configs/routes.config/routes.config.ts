@@ -11,32 +11,44 @@ export const protectedRoutes: Routes = {
         },
     },
     '/menus': {
-        key: 'menu-management.menus',
+        key: 'menu-management',
         authority: [],
         meta: {
             pageBackgroundType: 'plain',
             pageContainerType: 'contained',
         },
     },
-    '/menu2': {
-        key: 'menu-management.menu2',
+    '/menus/[menuId]': {
+        key: 'menu-management',
         authority: [],
+        dynamicRoute: true,
         meta: {
             pageBackgroundType: 'plain',
             pageContainerType: 'default',
         },
     },
-    '/price-editor': {
-        key: 'menu-management.price-editor',
+    '/menus/[menuId]/bulk': {
+        key: 'menu-management',
         authority: [],
+        dynamicRoute: true,
         meta: {
             pageBackgroundType: 'plain',
             pageContainerType: 'default',
         },
     },
-    '/price-editor/[menuId]': {
-        key: 'menu-management.price-editor',
+    '/menus/[menuId]/price-editor': {
+        key: 'menu-management',
         authority: [],
+        dynamicRoute: true,
+        meta: {
+            pageBackgroundType: 'plain',
+            pageContainerType: 'default',
+        },
+    },
+    '/menus/[menuId]/categories/[categoryId]': {
+        key: 'menu-management',
+        authority: [],
+        dynamicRoute: true,
         meta: {
             pageBackgroundType: 'plain',
             pageContainerType: 'default',

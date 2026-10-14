@@ -5,7 +5,6 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Button, Drawer, Input, FormContainer, FormItem } from '@/components/ui';
 import { Controller } from 'react-hook-form';
-import { Checkbox } from '@/components/ui';
 import { MultiSelect, type Option } from '@/components/shared/MultiSelect';
 import { Switcher } from '@/components/ui';
 import { ProductImageUpload } from './components/product-image-upload';
@@ -25,14 +24,28 @@ const formSchema = productSchema.omit({ presence: true }).extend({
 });
 
 type FormSchemaType = z.infer<typeof formSchema>;
-import { ProductTag, type Product, VARIATION_TYPES, TAG_CONFIG } from '@/types';
+import {
+    ProductTag,
+    type Product,
+    VARIATION_TYPES,
+    TAG_CONFIG,
+    ALLERGEN_OPTIONS,
+    CONTENT_WARNING_OPTIONS,
+    PRIMARY_PRODUCT_TAGS,
+    DIETARY_PRODUCT_TAGS,
+} from '@/types';
 
-// Transform ingredient warnings to options (mocked for now as data is missing)
-const allergenOptions: Option[] = [
-    { label: 'Süt Ürünleri', value: 'dairy' },
-    { label: 'Gluten', value: 'gluten' },
-    { label: 'Kuruyemiş', value: 'nuts' },
-];
+// Options for 14 mandatory allergens (Turkish Food Codex)
+const allergenOptions: Option[] = ALLERGEN_OPTIONS.map((item) => ({
+    label: `${item.icon ? item.icon + ' ' : ''}${item.label}`,
+    value: item.value,
+}));
+
+// Options for content warnings (Turkish Food Codex & International standards)
+const contentWarningOptions: Option[] = CONTENT_WARNING_OPTIONS.map((item) => ({
+    label: `${item.icon ? item.icon + ' ' : ''}${item.label}`,
+    value: item.value,
+}));
 
 const daysOfWeek = [
     { value: 'mon', label: 'Pazartesi' },
@@ -73,9 +86,20 @@ export function ProductDrawer({
             categoryId: categoryId,
             tags: [],
             allergens: [],
+            contentWarnings: [],
             available: true,
             active: true,
             variations: [],
+            discount: {
+                enabled: false,
+                discountedPrice: 0,
+                hasSchedule: false,
+                startDate: '',
+                endDate: '',
+                startTime: '',
+                endTime: '',
+                days: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
+            },
             availabilityHours: daysOfWeek.map(day => ({
                 day: day.value,
                 label: day.label,
@@ -120,12 +144,32 @@ export function ProductDrawer({
                 categoryId: categoryId || product?.categoryId || '',
                 tags: product?.tags || [],
                 allergens: product?.allergens || [],
+                contentWarnings: product?.contentWarnings || [],
                 available: product?.available ?? true,
                 active: product?.active ?? true,
                 calories: product?.calories || 0,
                 cookingTime: product?.cookingTime || 0,
                 availabilityHours: availabilityHours,
                 variations: product?.variations || [],
+                discount: product?.discount ? {
+                    enabled: product.discount.enabled ?? false,
+                    discountedPrice: product.discount.discountedPrice ?? 0,
+                    hasSchedule: product.discount.hasSchedule ?? false,
+                    startDate: product.discount.startDate ?? '',
+                    endDate: product.discount.endDate ?? '',
+                    startTime: product.discount.startTime ?? '',
+                    endTime: product.discount.endTime ?? '',
+                    days: product.discount.days ?? ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
+                } : {
+                    enabled: false,
+                    discountedPrice: 0,
+                    hasSchedule: false,
+                    startDate: '',
+                    endDate: '',
+                    startTime: '',
+                    endTime: '',
+                    days: ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'],
+                },
             });
         }
     }, [open, product, categoryId, form]);
@@ -159,9 +203,22 @@ export function ProductDrawer({
                 categoryId: data.categoryId,
                 tags: data.tags,
                 allergens: data.allergens,
+                contentWarnings: data.contentWarnings,
                 available: data.available,
                 active: data.active,
                 variations: data.variations,
+                discount: data.discount?.enabled ? {
+                    enabled: true,
+                    discountedPrice: data.discount.discountedPrice,
+                    hasSchedule: data.discount.hasSchedule ?? false,
+                    ...(data.discount.hasSchedule ? {
+                        startDate: data.discount.startDate || undefined,
+                        endDate: data.discount.endDate || undefined,
+                        startTime: data.discount.startTime || undefined,
+                        endTime: data.discount.endTime || undefined,
+                        days: data.discount.days || undefined,
+                    } : {}),
+                } : undefined,
                 calories: data.calories,
                 cookingTime: data.cookingTime,
                 // Only include presence if there are custom settings
@@ -177,8 +234,6 @@ export function ProductDrawer({
             setIsSaving(false);
         }
     }
-
-    const availableTags = Object.values(ProductTag);
 
     const Footer = (
         <div className='bg-background mt-auto flex justify-end space-x-2 w-full'>
@@ -309,7 +364,6 @@ export function ProductDrawer({
                                 render={({ field, fieldState }) => (
                                     <FormItem
                                         label="Ürün Görseli"
-                                        extra="Ürününüz için bir görsel yükleyin."
                                         invalid={Boolean(fieldState.error)}
                                         errorMessage={fieldState.error?.message}
                                     >
@@ -347,6 +401,214 @@ export function ProductDrawer({
                                     </FormItem>
                                 )}
                             />
+
+                            {/* İndirimli Fiyat Seçeneği & Planlaması */}
+                            <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-800/20 p-4 space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <div className="space-y-0.5 pr-4">
+                                        <div className="flex items-center gap-2">
+                                            <span className="text-base">🏷️</span>
+                                            <span className="font-semibold text-foreground text-sm">
+                                                İndirimli Fiyat Uygula
+                                            </span>
+                                        </div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Ürünün indirimde olduğunu belirtin ve özel indirimli fiyat tanımlayın.
+                                        </p>
+                                    </div>
+                                    <Controller
+                                        name="discount.enabled"
+                                        control={form.control}
+                                        render={({ field }) => (
+                                            <Switcher
+                                                className="shrink-0"
+                                                checked={Boolean(field.value)}
+                                                onChange={(checked: boolean) => field.onChange(checked)}
+                                            />
+                                        )}
+                                    />
+                                </div>
+
+                                {form.watch('discount.enabled') && (
+                                    <div className="pt-3 border-t border-gray-200 dark:border-gray-700 space-y-4">
+                                        {/* İndirimli Fiyat Input & Hesaplanan İndirim Oranı */}
+                                        <Controller
+                                            name="discount.discountedPrice"
+                                            control={form.control}
+                                            render={({ field, fieldState }) => {
+                                                const currentPrice = form.watch('price') || 0;
+                                                const discPrice = field.value || 0;
+                                                const isLower = currentPrice > 0 && discPrice > 0 && discPrice < currentPrice;
+                                                const discountPercent = isLower ? Math.round(((currentPrice - discPrice) / currentPrice) * 100) : 0;
+                                                const saving = isLower ? (currentPrice - discPrice).toFixed(2) : '0';
+
+                                                return (
+                                                    <FormItem
+                                                        label="İndirimli Satış Fiyatı"
+                                                        invalid={Boolean(fieldState.error) || (discPrice >= currentPrice && discPrice > 0 && currentPrice > 0)}
+                                                        errorMessage={
+                                                            fieldState.error?.message ||
+                                                            (discPrice >= currentPrice && discPrice > 0 && currentPrice > 0
+                                                                ? 'İndirimli fiyat normal satış fiyatından düşük olmalıdır.'
+                                                                : undefined)
+                                                        }
+                                                        extra={
+                                                            isLower ? (
+                                                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-600 dark:text-emerald-400 mt-1">
+                                                                    <span>🎉 %{discountPercent} İndirim</span>
+                                                                    <span>•</span>
+                                                                    <span>{saving} ₺ kazanç</span>
+                                                                </span>
+                                                            ) : undefined
+                                                        }
+                                                    >
+                                                        <Input
+                                                            type="number"
+                                                            step="0.01"
+                                                            placeholder="35.00"
+                                                            {...field}
+                                                            onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                                                        />
+                                                    </FormItem>
+                                                );
+                                            }}
+                                        />
+
+                                        {/* Zaman Kısıtlaması / Planlama Switcher */}
+                                        <div className="pt-2 border-t border-gray-200/70 dark:border-gray-700/70">
+                                            <div className="flex items-center justify-between mb-3">
+                                                <div className="space-y-0.5">
+                                                    <span className="text-xs font-semibold text-foreground flex items-center gap-1.5">
+                                                        <span>⏰</span>
+                                                        <span>Zaman Aralığı Belirle (Opsiyonel)</span>
+                                                    </span>
+                                                    <p className="text-[11px] text-muted-foreground">
+                                                        İndirimin yalnızca belirli tarihler, günler veya saatler (ör. Happy Hour) arasında geçerli olmasını sağlayın.
+                                                    </p>
+                                                </div>
+                                                <Controller
+                                                    name="discount.hasSchedule"
+                                                    control={form.control}
+                                                    render={({ field }) => (
+                                                        <Switcher
+                                                            className="shrink-0 scale-90"
+                                                            checked={Boolean(field.value)}
+                                                            onChange={(checked: boolean) => field.onChange(checked)}
+                                                        />
+                                                    )}
+                                                />
+                                            </div>
+
+                                            {form.watch('discount.hasSchedule') && (
+                                                <div className="p-3 bg-background rounded-lg border border-gray-200 dark:border-gray-700 space-y-3 mt-2">
+                                                    {/* Tarih Aralığı */}
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <Controller
+                                                            name="discount.startDate"
+                                                            control={form.control}
+                                                            render={({ field }) => (
+                                                                <FormItem label="Başlangıç Tarihi">
+                                                                    <Input
+                                                                        type="date"
+                                                                        {...field}
+                                                                        value={field.value || ''}
+                                                                    />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <Controller
+                                                            name="discount.endDate"
+                                                            control={form.control}
+                                                            render={({ field }) => (
+                                                                <FormItem label="Bitiş Tarihi">
+                                                                    <Input
+                                                                        type="date"
+                                                                        {...field}
+                                                                        value={field.value || ''}
+                                                                    />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </div>
+
+                                                    {/* Saat Aralığı */}
+                                                    <div className="grid grid-cols-2 gap-3">
+                                                        <Controller
+                                                            name="discount.startTime"
+                                                            control={form.control}
+                                                            render={({ field }) => (
+                                                                <FormItem label="Başlangıç Saati">
+                                                                    <Input
+                                                                        type="time"
+                                                                        {...field}
+                                                                        value={field.value || ''}
+                                                                    />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                        <Controller
+                                                            name="discount.endTime"
+                                                            control={form.control}
+                                                            render={({ field }) => (
+                                                                <FormItem label="Bitiş Saati">
+                                                                    <Input
+                                                                        type="time"
+                                                                        {...field}
+                                                                        value={field.value || ''}
+                                                                    />
+                                                                </FormItem>
+                                                            )}
+                                                        />
+                                                    </div>
+
+                                                    {/* Günler Seçimi */}
+                                                    <div>
+                                                        <label className="text-xs font-medium text-foreground block mb-1.5">
+                                                            Geçerli Günler
+                                                        </label>
+                                                        <Controller
+                                                            name="discount.days"
+                                                            control={form.control}
+                                                            render={({ field }) => {
+                                                                const currentDays = field.value || [];
+                                                                const toggleDay = (dayVal: string) => {
+                                                                    if (currentDays.includes(dayVal)) {
+                                                                        field.onChange(currentDays.filter((d: string) => d !== dayVal));
+                                                                    } else {
+                                                                        field.onChange([...currentDays, dayVal]);
+                                                                    }
+                                                                };
+
+                                                                return (
+                                                                    <div className="flex flex-wrap gap-1">
+                                                                        {daysOfWeek.map((day) => {
+                                                                            const isSelected = currentDays.includes(day.value);
+                                                                            return (
+                                                                                <button
+                                                                                    key={day.value}
+                                                                                    type="button"
+                                                                                    onClick={() => toggleDay(day.value)}
+                                                                                    className={`px-2 py-1 text-xs rounded-md border font-medium transition-colors ${
+                                                                                        isSelected
+                                                                                            ? 'bg-primary text-primary-foreground border-primary'
+                                                                                            : 'bg-muted/40 text-muted-foreground border-border hover:bg-muted'
+                                                                                    }`}
+                                                                                >
+                                                                                    {day.label.slice(0, 3)}
+                                                                                </button>
+                                                                            );
+                                                                        })}
+                                                                    </div>
+                                                                );
+                                                            }}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
 
                             <div className="border-t border-gray-100 dark:border-gray-800 pt-4">
                                 <div className="flex items-center justify-between mb-4">
@@ -556,13 +818,14 @@ export function ProductDrawer({
                                 />
                             </div>
 
+                            {/* Alerjenler (Türk Gıda Kodeksi 14 Zorunlu Alerjen) */}
                             <Controller
                                 name="allergens"
                                 control={form.control}
                                 render={({ field, fieldState }) => (
                                     <FormItem
-                                        label="İçerik Uyarıları"
-                                        extra="Ürünün içerdiği alerjenleri veya uyarıları seçin."
+                                        label="Alerjenler"
+                                        extra="Türk Gıda Kodeksi ve restoran menü yönetmeliğine uygun 14 temel alerjen listesi."
                                         invalid={Boolean(fieldState.error)}
                                         errorMessage={fieldState.error?.message}
                                     >
@@ -570,58 +833,120 @@ export function ProductDrawer({
                                             options={allergenOptions}
                                             value={field.value || []}
                                             onChange={field.onChange}
-                                            placeholder="İçerik uyarılarını seçin..."
+                                            placeholder="Alerjenleri seçin veya arayın..."
                                         />
                                     </FormItem>
                                 )}
                             />
 
+                            {/* İçerik Uyarıları (Türk Gıda Kodeksi & Dünya Standartları) */}
+                            <Controller
+                                name="contentWarnings"
+                                control={form.control}
+                                render={({ field, fieldState }) => (
+                                    <FormItem
+                                        label="İçerik Uyarıları"
+                                        extra="Türk Gıda Kodeksi ve uluslararası standartlara uygun içerik uyarıları (Alkol, domuz mamulü, tatlandırıcı vb.)."
+                                        invalid={Boolean(fieldState.error)}
+                                        errorMessage={fieldState.error?.message}
+                                    >
+                                        <MultiSelect
+                                            options={contentWarningOptions}
+                                            value={field.value || []}
+                                            onChange={field.onChange}
+                                            placeholder="İçerik uyarılarını seçin veya arayın..."
+                                        />
+                                    </FormItem>
+                                )}
+                            />
+
+                            {/* Etiketler */}
                             <Controller
                                 name="tags"
                                 control={form.control}
-                                render={() => (
-                                    <FormItem
-                                        label="Etiketler"
-                                        extra="Ürün için uygun etiketleri seçin"
-                                    >
-                                        <div className="grid grid-cols-2 gap-3 mt-2">
-                                            {availableTags.map((tag) => {
-                                                const config = TAG_CONFIG[tag];
-                                                return (
-                                                    <Controller
-                                                        key={tag}
-                                                        name="tags"
-                                                        control={form.control}
-                                                        render={({ field }) => {
-                                                            return (
-                                                                <div className="flex flex-row items-center space-x-3 space-y-0 mb-2">
-                                                                    <Checkbox
-                                                                        checked={field.value?.includes(tag)}
-                                                                        onChange={(val, e) => {
-                                                                            const checked = e.target.checked;
-                                                                            const currentTags = field.value || [];
-                                                                            return checked
-                                                                                ? field.onChange([...currentTags, tag])
-                                                                                : field.onChange(
-                                                                                    currentTags.filter((value: string) => value !== tag)
-                                                                                );
-                                                                        }}
-                                                                    />
-                                                                    <label className="font-normal cursor-pointer text-sm">
-                                                                        <span>
-                                                                            <span className="mr-1">{config.icon}</span>
-                                                                            {config.label}
-                                                                        </span>
-                                                                    </label>
+                                render={({ field }) => {
+                                    const currentTags = field.value || [];
+                                    const toggleTag = (tag: ProductTag) => {
+                                        if (currentTags.includes(tag)) {
+                                            field.onChange(currentTags.filter((t: ProductTag) => t !== tag));
+                                        } else {
+                                            field.onChange([...currentTags, tag]);
+                                        }
+                                    };
+
+                                    return (
+                                        <FormItem
+                                            label="Etiketler"
+                                            extra="Ürün kartlarında öne çıkarılacak etiketleri seçin."
+                                        >
+                                            <div className="space-y-3 mt-1.5">
+                                                {/* Ana Vitrin Etiketleri (Popüler, Öne Çıkan, Şefin Tavsiyesi, Yeni) */}
+                                                <div className="grid grid-cols-2 gap-2.5">
+                                                    {PRIMARY_PRODUCT_TAGS.map((tag) => {
+                                                        const config = TAG_CONFIG[tag];
+                                                        const isSelected = currentTags.includes(tag);
+                                                        return (
+                                                            <button
+                                                                key={tag}
+                                                                type="button"
+                                                                onClick={() => toggleTag(tag)}
+                                                                className={`flex items-center gap-2.5 p-3 rounded-xl border text-sm font-medium transition-all text-left ${
+                                                                    isSelected
+                                                                        ? 'border-primary bg-primary/10 text-primary shadow-xs ring-2 ring-primary/20 font-semibold'
+                                                                        : 'border-gray-200 dark:border-gray-700 bg-background text-foreground/80 hover:bg-gray-50 dark:hover:bg-gray-800'
+                                                                }`}
+                                                            >
+                                                                <span className="text-xl shrink-0">{config.icon}</span>
+                                                                <div className="flex-1 min-w-0">
+                                                                    <div className="leading-tight truncate">{config.label}</div>
                                                                 </div>
+                                                                <span className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                                                                    isSelected
+                                                                        ? 'border-primary bg-primary text-white'
+                                                                        : 'border-gray-300 dark:border-gray-600'
+                                                                }`}>
+                                                                    {isSelected && (
+                                                                        <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                                                                            <polyline points="20 6 9 17 4 12"></polyline>
+                                                                        </svg>
+                                                                    )}
+                                                                </span>
+                                                            </button>
+                                                        );
+                                                    })}
+                                                </div>
+
+                                                {/* Diyet & Diğer Tercih Etiketleri */}
+                                                <div className="pt-2 border-t border-gray-100 dark:border-gray-800">
+                                                    <span className="text-xs font-medium text-muted-foreground block mb-2">
+                                                        Diyet ve Özellik Etiketleri
+                                                    </span>
+                                                    <div className="flex flex-wrap gap-1.5">
+                                                        {DIETARY_PRODUCT_TAGS.map((tag) => {
+                                                            const config = TAG_CONFIG[tag];
+                                                            const isSelected = currentTags.includes(tag);
+                                                            return (
+                                                                <button
+                                                                    key={tag}
+                                                                    type="button"
+                                                                    onClick={() => toggleTag(tag)}
+                                                                    className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-xs font-medium transition-colors ${
+                                                                        isSelected
+                                                                            ? 'border-primary bg-primary/15 text-primary font-semibold'
+                                                                            : 'border-gray-200 dark:border-gray-700 bg-card text-muted-foreground hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-foreground'
+                                                                    }`}
+                                                                >
+                                                                    <span>{config.icon}</span>
+                                                                    <span>{config.label}</span>
+                                                                </button>
                                                             );
-                                                        }}
-                                                    />
-                                                );
-                                            })}
-                                        </div>
-                                    </FormItem>
-                                )}
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </FormItem>
+                                    );
+                                }}
                             />
                         </div>
 

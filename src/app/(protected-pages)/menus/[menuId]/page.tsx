@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Pencil, Trash2, Plus, ChevronRight, QrCode, Eye, GripVertical, ImageIcon, Loader2 } from 'lucide-react';
+import { Pencil, Trash2, Plus, ChevronRight, QrCode, Eye, GripVertical, ImageIcon, Loader2, Sliders } from 'lucide-react';
 import { toast } from 'sonner';
 
 import {
@@ -331,6 +331,14 @@ export default function MenuDetailPage({ params }: MenuDetailPageProps) {
                 </div>
 
                 <div className="flex flex-row gap-2">
+                    <Button
+                        size="sm"
+                        onClick={() => router.push(`/menus/${menu.id}/settings`)}
+                        icon={<Sliders className="h-4 w-4" />}
+                        className="rounded-full"
+                    >
+                        <span>Görünüm Ayarları</span>
+                    </Button>
                     <Button
                         size="sm"
                         onClick={() => router.push(`/settings/qr-code?menuId=${menu.id}`)}
