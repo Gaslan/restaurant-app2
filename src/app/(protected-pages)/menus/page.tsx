@@ -236,14 +236,6 @@ export default function MenusPage() {
                                                         />
                                                     }
                                                 >
-                                                    <Dropdown.Item
-                                                        eventKey="price-editor"
-                                                        onClick={() => router.push(`/price-editor/${menu.id}`)}
-                                                        className="flex items-center gap-2 cursor-pointer"
-                                                    >
-                                                        <Tag className="h-4 w-4 text-gray-500" />
-                                                        <span>Toplu Fiyat Güncelle</span>
-                                                    </Dropdown.Item>
 
                                                     <Dropdown.Item
                                                         eventKey="view"
@@ -261,6 +253,24 @@ export default function MenusPage() {
                                                     >
                                                         <Pencil className="h-4 w-4 text-gray-500" />
                                                         <span>Edit</span>
+                                                    </Dropdown.Item>
+                                                    
+                                                    <Dropdown.Item
+                                                        eventKey="menu-item"
+                                                        onClick={() => router.push(`/menu2?menuId=${menu.id}`)}
+                                                        className="flex items-center gap-2 cursor-pointer"
+                                                    >
+                                                        <Tag className="h-4 w-4 text-gray-500" />
+                                                        <span>Toplu Kategori/Ürün Düzenle</span>
+                                                    </Dropdown.Item>
+
+                                                    <Dropdown.Item
+                                                        eventKey="price-editor"
+                                                        onClick={() => router.push(`/price-editor/${menu.id}`)}
+                                                        className="flex items-center gap-2 cursor-pointer"
+                                                    >
+                                                        <Tag className="h-4 w-4 text-gray-500" />
+                                                        <span>Toplu Fiyat Güncelle</span>
                                                     </Dropdown.Item>
 
                                                     <Dropdown.Item variant="divider" />
@@ -333,22 +343,6 @@ export default function MenusPage() {
                             />
                         </div>
 
-                        {/* Toplu Fiyat Güncelle */}
-                        <Button
-                            size={'lg'}
-                            variant="default"
-                            icon={<Tag className="h-4 w-4" />}
-                            className="w-full justify-start"
-                            onClick={() => {
-                                if (drawerMenu) {
-                                    setDrawerOpen(false);
-                                    router.push(`/price-editor/${drawerMenu.id}`);
-                                }
-                            }}
-                        >
-                            <span>Toplu Fiyat Güncelle</span>
-                        </Button>
-
                         {/* View Details */}
                         <Button
                             size={'lg'}
@@ -359,7 +353,6 @@ export default function MenusPage() {
                         >
                             <span>View Details</span>
                         </Button>
-
 
 
                         {/* Edit Button */}
@@ -376,6 +369,41 @@ export default function MenusPage() {
                             }}
                         >
                             <span>Edit Menu</span>
+                        </Button>
+
+                        
+
+                        {/* Toplu Kategori Urun Duzenle */}
+                        <Button
+                            size={'lg'}
+                            variant="default"
+                            icon={<Tag className="h-4 w-4" />}
+                            className="w-full justify-start"
+                            onClick={() => {
+                                if (drawerMenu) {
+                                    setDrawerOpen(false);
+                                    router.push(`/menu2?menuId=${drawerMenu.id}`);
+                                }
+                            }}
+                        >
+                            <span>Toplu Kategori/Ürün Düzenle</span>
+                        </Button>
+                        
+
+                        {/* Toplu Fiyat Güncelle */}
+                        <Button
+                            size={'lg'}
+                            variant="default"
+                            icon={<Tag className="h-4 w-4" />}
+                            className="w-full justify-start"
+                            onClick={() => {
+                                if (drawerMenu) {
+                                    setDrawerOpen(false);
+                                    router.push(`/price-editor/${drawerMenu.id}`);
+                                }
+                            }}
+                        >
+                            <span>Toplu Fiyat Güncelle</span>
                         </Button>
 
                         {/* Delete Button */}
