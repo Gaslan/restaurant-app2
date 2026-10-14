@@ -1,8 +1,27 @@
 'use client';
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
+import {
+    DndContext,
+    DragOverlay,
+    closestCorners,
+    pointerWithin,
+    rectIntersection,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    type DragStartEvent,
+    type DragOverEvent,
+    type DragEndEvent,
+    type CollisionDetection,
+} from '@dnd-kit/core';
+import {
+    arrayMove,
+    sortableKeyboardCoordinates,
+} from '@dnd-kit/sortable';
 import {
     Plus,
     QrCode,
@@ -47,6 +66,7 @@ import { ProductDrawer } from '@/views/admin/products/product-drawer';
 import { DeleteProductDialog } from '@/views/admin/products/delete-product-dialog';
 import { CategoryReorderModal } from './category-reorder-modal';
 import { CategorySection } from './category-section';
+import { ProductDragOverlayItem } from './sortable-product-row';
 
 export function Menu2View() {
     const router = useRouter();
@@ -106,6 +126,23 @@ export function Menu2View() {
     const [selectedProductIds, setSelectedProductIds] = useState<string[]>([]);
     const [batchDeleteConfirmOpen, setBatchDeleteConfirmOpen] = useState(false);
     const [isBatchDeleting, setIsBatchDeleting] = useState(false);
+
+    // Drag-and-drop states (lifted for cross-category moving)
+    const [activeProduct, setActiveProduct] = useState<Product | null>(null);
+    const [activeSourceCategoryId, setActiveSourceCategoryId] = useState<string | null>(null);
+    const [activeRowWidth, setActiveRowWidth] = useState<number | null>(null);
+    const initialCategoriesRef = useRef<CategoryWithProducts[] | null>(null);
+
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 5,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
 
     // 1. Initial Load: Fetch all menus & restaurant info
     useEffect(() => {
@@ -421,6 +458,305 @@ export function Menu2View() {
                 prev ? { ...prev, categories: [...previousCategories] } : prev
             );
             toast.error('Sıralama güncellenemedi', { closeButton: false });
+        }
+    };
+
+    // Helper to find which category contains an item or matches container id
+    const findContainer = useCallback(
+        (id: string, categories: CategoryWithProducts[]): string | null => {
+            if (categories.some((c) => c.id === id)) {
+                return id;
+            }
+            const found = categories.find((c) =>
+                (c.products || []).some((p) => p.id === id)
+            );
+            return found ? found.id : null;
+        },
+        []
+    );
+
+    const collisionDetectionStrategy: CollisionDetection = useCallback((args) => {
+        const pointerCollisions = pointerWithin(args);
+        if (pointerCollisions.length > 0) {
+            return pointerCollisions;
+        }
+
+        const rectCollisions = rectIntersection(args);
+        if (rectCollisions.length > 0) {
+            return rectCollisions;
+        }
+
+        return closestCorners(args);
+    }, []);
+
+    // Handle moving a product to another category
+    const handleMoveProduct = async (
+        sourceCategoryId: string,
+        targetCategoryId: string,
+        productId: string,
+        targetIndex: number,
+        targetProducts: Product[],
+        snapshot: CategoryWithProducts[]
+    ) => {
+        if (!selectedMenuId) return;
+
+        const targetCategory = menuData?.categories?.find((c) => c.id === targetCategoryId);
+        const previousProductId =
+            targetIndex > 0 ? targetProducts[targetIndex - 1]?.id || null : null;
+        const nextProductId =
+            targetIndex < targetProducts.length - 1
+                ? targetProducts[targetIndex + 1]?.id || null
+                : null;
+
+        try {
+            const res = await apiPatch<Product>(
+                `/api/products/${productId}/reorder?menuId=${selectedMenuId}&categoryId=${sourceCategoryId}`,
+                {
+                    sourceCategoryId,
+                    targetCategoryId,
+                    previousProductId,
+                    nextProductId,
+                    orderedProductIds: targetProducts.map((p) => p.id),
+                }
+            );
+
+            if (res.data?.position) {
+                setMenuData((prev) => {
+                    if (!prev) return prev;
+                    return {
+                        ...prev,
+                        categories: prev.categories.map((c) =>
+                            c.id === targetCategoryId
+                                ? {
+                                      ...c,
+                                      products: (c.products || []).map((p) =>
+                                          p.id === productId
+                                              ? {
+                                                    ...p,
+                                                    position: res.data!.position,
+                                                    categoryId: targetCategoryId,
+                                                }
+                                              : p
+                                      ),
+                                  }
+                                : c
+                        ),
+                    };
+                });
+            }
+
+            const targetName = targetCategory?.name || 'yeni';
+            toast.success(`Ürün "${targetName}" kategorisine taşındı`, {
+                closeButton: false,
+            });
+        } catch (error) {
+            console.error('Failed to move product across categories:', error);
+            setMenuData((prev) => (prev ? { ...prev, categories: snapshot } : prev));
+            toast.error('Ürün taşınamadı', { closeButton: false });
+        }
+    };
+
+    const handleDragStart = (event: DragStartEvent) => {
+        const { active } = event;
+        const activeId = String(active.id);
+
+        if (!menuData) return;
+
+        // Store snapshot before drag begins
+        initialCategoriesRef.current = menuData.categories.map((c) => ({
+            ...c,
+            products: [...(c.products || [])],
+        }));
+
+        const initialWidth = active.rect.current.initial?.width;
+        if (initialWidth) {
+            setActiveRowWidth(initialWidth);
+        } else {
+            const el = document.querySelector(`[data-product-id="${activeId}"]`);
+            if (el) {
+                setActiveRowWidth(el.getBoundingClientRect().width);
+            }
+        }
+
+        const sourceCat = menuData.categories.find((c) =>
+            (c.products || []).some((p) => p.id === activeId)
+        );
+        if (sourceCat) {
+            const prod = (sourceCat.products || []).find((p) => p.id === activeId) || null;
+            setActiveProduct(prod);
+            setActiveSourceCategoryId(sourceCat.id);
+        }
+    };
+
+    const handleDragOver = (event: DragOverEvent) => {
+        const { active, over } = event;
+        if (!over || !menuData) return;
+
+        const activeId = String(active.id);
+        const overId = String(over.id);
+
+        const activeContainer = findContainer(activeId, menuData.categories);
+        const overContainer = findContainer(overId, menuData.categories);
+
+        if (!activeContainer || !overContainer || activeContainer === overContainer) {
+            return;
+        }
+
+        setMenuData((prev) => {
+            if (!prev) return prev;
+
+            const sourceCat = prev.categories.find((c) => c.id === activeContainer);
+            const targetCat = prev.categories.find((c) => c.id === overContainer);
+            if (!sourceCat || !targetCat) return prev;
+
+            const sourceProducts = [...(sourceCat.products || [])];
+            const targetProducts = [...(targetCat.products || [])];
+
+            const activeIndex = sourceProducts.findIndex((p) => p.id === activeId);
+            if (activeIndex === -1) return prev;
+
+            const [draggedProduct] = sourceProducts.splice(activeIndex, 1);
+            const updatedProduct = { ...draggedProduct, categoryId: overContainer };
+
+            const isOverCategoryContainer = overId === overContainer;
+            let newIndex: number;
+
+            if (isOverCategoryContainer) {
+                newIndex = targetProducts.length;
+            } else {
+                const overIndex = targetProducts.findIndex((p) => p.id === overId);
+                const isBelowOverItem =
+                    over && active.rect.current.translated
+                        ? active.rect.current.translated.top > over.rect.top + over.rect.height
+                        : false;
+
+                const modifier = isBelowOverItem ? 1 : 0;
+                newIndex = overIndex >= 0 ? overIndex + modifier : targetProducts.length;
+            }
+
+            targetProducts.splice(newIndex, 0, updatedProduct);
+
+            return {
+                ...prev,
+                categories: prev.categories.map((c) => {
+                    if (c.id === activeContainer) {
+                        return { ...c, products: sourceProducts };
+                    }
+                    if (c.id === overContainer) {
+                        return { ...c, products: targetProducts };
+                    }
+                    return c;
+                }),
+            };
+        });
+    };
+
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
+        const activeId = String(active.id);
+        const originalSourceCatId = activeSourceCategoryId;
+        const snapshot = initialCategoriesRef.current;
+
+        setActiveProduct(null);
+        setActiveSourceCategoryId(null);
+        setActiveRowWidth(null);
+        initialCategoriesRef.current = null;
+
+        if (!over || !menuData || !originalSourceCatId || !snapshot) {
+            if (snapshot) {
+                setMenuData((prev) => (prev ? { ...prev, categories: snapshot } : prev));
+            }
+            return;
+        }
+
+        const overId = String(over.id);
+        const currentContainer = findContainer(activeId, menuData.categories);
+
+        if (!currentContainer) {
+            setMenuData((prev) => (prev ? { ...prev, categories: snapshot } : prev));
+            return;
+        }
+
+        if (originalSourceCatId === currentContainer) {
+            // Reordering within the same category
+            const initialCat = snapshot.find((c) => c.id === originalSourceCatId);
+            const initialIndex = initialCat?.products?.findIndex((p) => p.id === activeId) ?? -1;
+
+            const currentCat = menuData.categories.find((c) => c.id === currentContainer);
+            const currentProducts = currentCat?.products || [];
+            const activeIndex = currentProducts.findIndex((p) => p.id === activeId);
+            const overIndex = currentProducts.findIndex((p) => p.id === overId);
+
+            let finalIndex = activeIndex;
+            if (overIndex !== -1 && activeIndex !== -1 && activeIndex !== overIndex) {
+                const reordered = arrayMove(currentProducts, activeIndex, overIndex);
+                setMenuData((prev) =>
+                    prev
+                        ? {
+                              ...prev,
+                              categories: prev.categories.map((c) =>
+                                  c.id === currentContainer ? { ...c, products: reordered } : c
+                              ),
+                          }
+                        : prev
+                );
+                finalIndex = overIndex;
+            }
+
+            if (initialIndex === finalIndex || finalIndex === -1 || initialIndex === -1) {
+                return;
+            }
+
+            await handleReorderProducts(originalSourceCatId, initialIndex, finalIndex, activeId);
+        } else {
+            // Cross-category move!
+            const targetCat = menuData.categories.find((c) => c.id === currentContainer);
+            const targetProducts = [...(targetCat?.products || [])];
+            const activeIndex = targetProducts.findIndex((p) => p.id === activeId);
+            const overIndex = targetProducts.findIndex((p) => p.id === overId);
+
+            let finalIndex = activeIndex;
+            if (overIndex !== -1 && activeIndex !== -1 && activeIndex !== overIndex) {
+                const reordered = arrayMove(targetProducts, activeIndex, overIndex);
+                setMenuData((prev) =>
+                    prev
+                        ? {
+                              ...prev,
+                              categories: prev.categories.map((c) =>
+                                  c.id === currentContainer ? { ...c, products: reordered } : c
+                              ),
+                          }
+                        : prev
+                );
+                finalIndex = overIndex;
+                await handleMoveProduct(
+                    originalSourceCatId,
+                    currentContainer,
+                    activeId,
+                    finalIndex,
+                    reordered,
+                    snapshot
+                );
+            } else {
+                await handleMoveProduct(
+                    originalSourceCatId,
+                    currentContainer,
+                    activeId,
+                    finalIndex >= 0 ? finalIndex : 0,
+                    targetProducts,
+                    snapshot
+                );
+            }
+        }
+    };
+
+    const handleDragCancel = () => {
+        setActiveProduct(null);
+        setActiveSourceCategoryId(null);
+        setActiveRowWidth(null);
+        if (initialCategoriesRef.current) {
+            setMenuData((prev) => (prev ? { ...prev, categories: initialCategoriesRef.current! } : prev));
+            initialCategoriesRef.current = null;
         }
     };
 
@@ -744,54 +1080,72 @@ export function Menu2View() {
                     </Button>
                 </div>
             ) : (
-                <div className="w-full space-y-4">
-                    {visibleCategories.map((category, index) => (
-                        <CategorySection
-                            key={category.id}
-                            category={category}
-                            currency={currency}
-                            isFirst={index === 0}
-                            isLast={index === visibleCategories.length - 1}
-                            searchQuery={searchQuery}
-                            statusFilter={statusFilter.value}
-                            isSelectionMode={isSelectionMode}
-                            selectedProductIds={selectedProductIds}
-                            onToggleSelectProduct={handleToggleSelectProduct}
-                            onSelectCategoryProducts={handleSelectCategoryProducts}
-                            onAddProduct={(catId) =>
-                                setProductDrawer({ open: true, categoryId: catId, product: undefined })
-                            }
-                            onAddCategoryAfter={(catId) =>
-                                setCategoryDialog({ open: true, category: undefined, afterCategoryId: catId })
-                            }
-                            onEditCategory={(cat) =>
-                                setCategoryDialog({ open: true, category: cat })
-                            }
-                            onDeleteCategory={(cat) =>
-                                setDeleteCategoryDialog({ open: true, category: cat })
-                            }
-                            onMoveCategory={handleMoveCategory}
-                            onEditProduct={(prod, catId) =>
-                                setProductDrawer({ open: true, categoryId: catId, product: prod })
-                            }
-                            onDeleteProduct={(prod, catId) =>
-                                setDeleteProductDialog({
-                                    open: true,
-                                    categoryId: catId,
-                                    product: prod,
-                                })
-                            }
-                            onProductDrawerOpen={(prod, catId) =>
-                                setMobileProductDrawer({
-                                    open: true,
-                                    product: prod,
-                                    categoryId: catId,
-                                })
-                            }
-                            onReorderProducts={handleReorderProducts}
-                        />
-                    ))}
-                </div>
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={collisionDetectionStrategy}
+                    onDragStart={handleDragStart}
+                    onDragOver={handleDragOver}
+                    onDragEnd={handleDragEnd}
+                    onDragCancel={handleDragCancel}
+                >
+                    <div className="w-full space-y-4">
+                        {visibleCategories.map((category, index) => (
+                            <CategorySection
+                                key={category.id}
+                                category={category}
+                                currency={currency}
+                                isFirst={index === 0}
+                                isLast={index === visibleCategories.length - 1}
+                                searchQuery={searchQuery}
+                                statusFilter={statusFilter.value}
+                                isSelectionMode={isSelectionMode}
+                                selectedProductIds={selectedProductIds}
+                                onToggleSelectProduct={handleToggleSelectProduct}
+                                onSelectCategoryProducts={handleSelectCategoryProducts}
+                                onAddProduct={(catId) =>
+                                    setProductDrawer({ open: true, categoryId: catId, product: undefined })
+                                }
+                                onAddCategoryAfter={(catId) =>
+                                    setCategoryDialog({ open: true, category: undefined, afterCategoryId: catId })
+                                }
+                                onEditCategory={(cat) =>
+                                    setCategoryDialog({ open: true, category: cat })
+                                }
+                                onDeleteCategory={(cat) =>
+                                    setDeleteCategoryDialog({ open: true, category: cat })
+                                }
+                                onMoveCategory={handleMoveCategory}
+                                onEditProduct={(prod, catId) =>
+                                    setProductDrawer({ open: true, categoryId: catId, product: prod })
+                                }
+                                onDeleteProduct={(prod, catId) =>
+                                    setDeleteProductDialog({
+                                        open: true,
+                                        categoryId: catId,
+                                        product: prod,
+                                    })
+                                }
+                                onProductDrawerOpen={(prod, catId) =>
+                                    setMobileProductDrawer({
+                                        open: true,
+                                        product: prod,
+                                        categoryId: catId,
+                                    })
+                                }
+                            />
+                        ))}
+                    </div>
+
+                    <DragOverlay dropAnimation={null}>
+                        {activeProduct ? (
+                            <ProductDragOverlayItem
+                                product={activeProduct}
+                                currency={currency}
+                                width={activeRowWidth}
+                            />
+                        ) : null}
+                    </DragOverlay>
+                </DndContext>
             )}
 
             {/* 5. Modals and Drawers */}

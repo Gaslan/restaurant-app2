@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { reorderProduct } from '@/lib/services/firestore-product.service';
+import { moveAndReorderProduct } from '@/lib/services/firestore-product.service';
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
 /**
  * PATCH /api/products/[id]/reorder
- * Reorder a product using fractional indexing
+ * Reorder or move a product across categories using fractional indexing
  */
 export async function PATCH(
     request: NextRequest,
@@ -27,22 +27,25 @@ export async function PATCH(
         const { searchParams } = new URL(request.url);
         const menuId = searchParams.get('menuId') || body.menuId;
         const categoryId = searchParams.get('categoryId') || body.categoryId;
+        const sourceCategoryId = searchParams.get('sourceCategoryId') || body.sourceCategoryId || categoryId;
+        const targetCategoryId = searchParams.get('targetCategoryId') || body.targetCategoryId || categoryId;
 
         const previousProductId = body.previousProductId ?? body.beforeId ?? null;
         const nextProductId = body.nextProductId ?? body.afterId ?? null;
         const orderedProductIds = body.orderedProductIds ?? null;
 
-        if (!menuId || !categoryId) {
+        if (!menuId || !sourceCategoryId) {
             return NextResponse.json(
-                { error: 'menuId and categoryId are required for reordering' },
+                { error: 'menuId and sourceCategoryId are required for reordering' },
                 { status: 400 }
             );
         }
 
-        const updatedProduct = await reorderProduct(
+        const updatedProduct = await moveAndReorderProduct(
             restaurantId,
             menuId,
-            categoryId,
+            sourceCategoryId,
+            targetCategoryId,
             id,
             previousProductId,
             nextProductId,

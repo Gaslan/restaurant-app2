@@ -1,18 +1,9 @@
 'use client';
 
 import { useState } from 'react';
-import {
-    DndContext,
-    closestCenter,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
-    type DragEndEvent,
-} from '@dnd-kit/core';
+import { useDroppable } from '@dnd-kit/core';
 import {
     SortableContext,
-    sortableKeyboardCoordinates,
     verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import {
@@ -56,12 +47,6 @@ interface CategorySectionProps {
     onEditProduct: (product: Product, categoryId: string) => void;
     onDeleteProduct: (product: Product, categoryId: string) => void;
     onProductDrawerOpen: (product: Product, categoryId: string) => void;
-    onReorderProducts: (
-        categoryId: string,
-        oldIndex: number,
-        newIndex: number,
-        activeId: string
-    ) => Promise<void>;
 }
 
 export function CategorySection({
@@ -83,9 +68,16 @@ export function CategorySection({
     onEditProduct,
     onDeleteProduct,
     onProductDrawerOpen,
-    onReorderProducts,
 }: CategorySectionProps) {
     const [isExpanded, setIsExpanded] = useState(true);
+
+    const { setNodeRef, isOver } = useDroppable({
+        id: category.id,
+        data: {
+            type: 'category',
+            categoryId: category.id,
+        },
+    });
 
     // Filter products inside this category
     const filteredProducts = (category.products || []).filter((product) => {
@@ -103,25 +95,6 @@ export function CategorySection({
 
         return matchesSearch && matchesStatus;
     });
-
-    // Drag-and-drop sensors for products within this category
-    const sensors = useSensors(
-        useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-        useSensor(KeyboardSensor, {
-            coordinateGetter: sortableKeyboardCoordinates,
-        })
-    );
-
-    const handleProductDragEnd = async (event: DragEndEvent) => {
-        const { active, over } = event;
-        if (!over || active.id === over.id) return;
-
-        const oldIndex = filteredProducts.findIndex((p) => p.id === active.id);
-        const newIndex = filteredProducts.findIndex((p) => p.id === over.id);
-        if (oldIndex === -1 || newIndex === -1) return;
-
-        await onReorderProducts(category.id, oldIndex, newIndex, String(active.id));
-    };
 
     // If there's an active search query and no matching products AND category doesn't match, hide section
     const categoryMatchesQuery =
@@ -142,7 +115,15 @@ export function CategorySection({
     }
 
     return (
-        <div className="w-full rounded-none sm:rounded-xl border-y sm:border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 overflow-hidden transition-all">
+        <div
+            ref={setNodeRef}
+            className={classNames(
+                'w-full rounded-none sm:rounded-xl border-y sm:border overflow-hidden transition-all duration-200',
+                isOver
+                    ? 'border-primary ring-2 ring-primary/40 shadow-md bg-white dark:bg-gray-900'
+                    : 'border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900'
+            )}
+        >
             {/* Category Header (Single row) */}
             <div
                 onClick={() => setIsExpanded(!isExpanded)}
@@ -283,56 +264,48 @@ export function CategorySection({
             {isExpanded && (
                 <div>
                     {filteredProducts.length === 0 ? (
-                        <div className="text-center py-8 px-4 bg-gray-50/30 dark:bg-gray-900/40">
-                            {category.products?.length === 0 ? (
-                                <p className="text-sm text-muted-foreground">
-                                    Bu kategoride henüz ürün bulunmuyor.
-                                </p>
-                            ) : (
-                                <p className="text-xs text-muted-foreground">
-                                    Filtrelere uygun ürün bulunamadı.
-                                </p>
+                        <div
+                            className={classNames(
+                                'text-center py-8 px-4 transition-all duration-200 border-2 border-dashed m-3 rounded-lg flex flex-col items-center justify-center gap-1.5',
+                                isOver
+                                    ? 'border-primary bg-primary/10 text-primary scale-[1.01]'
+                                    : 'border-gray-200 dark:border-gray-800 bg-gray-50/30 dark:bg-gray-900/40 text-muted-foreground'
                             )}
+                        >
+                            <p className="text-sm font-medium">
+                                {category.products?.length === 0
+                                    ? 'Bu kategoride henüz ürün bulunmuyor.'
+                                    : 'Filtrelere uygun ürün bulunamadı.'}
+                            </p>
+                            <p className="text-xs opacity-75">
+                                Ürünleri buraya sürükleyip bırakabilirsiniz.
+                            </p>
                         </div>
                     ) : (
-                        <DndContext
-                            sensors={sensors}
-                            collisionDetection={closestCenter}
-                            onDragEnd={handleProductDragEnd}
+                        <SortableContext
+                            id={category.id}
+                            items={filteredProducts.map((p) => p.id)}
+                            strategy={verticalListSortingStrategy}
                         >
                             <Table>
-                                {/* <Table.THead>
-                                    <Table.Tr className="bg-gray-50/40 dark:bg-gray-800/20 text-xs">
-                                        <Table.Th className="w-10 p-3"></Table.Th>
-                                        <Table.Th className="w-14 p-3">Görsel</Table.Th>
-                                        <Table.Th className="p-3">Ürün Adı</Table.Th>
-                                        <Table.Th className="p-3">Fiyat</Table.Th>
-                                        <Table.Th className="hidden md:table-cell p-3">Durum</Table.Th>
-                                        <Table.Th className="text-right p-3"></Table.Th>
-                                    </Table.Tr>
-                                </Table.THead> */}
-                                <SortableContext
-                                    items={filteredProducts.map((p) => p.id)}
-                                    strategy={verticalListSortingStrategy}
-                                >
-                                    <Table.TBody>
-                                        {filteredProducts.map((product) => (
-                                            <SortableProductRow
-                                                key={product.id}
-                                                product={product}
-                                                currency={currency}
-                                                isSelectionMode={isSelectionMode}
-                                                isSelected={selectedProductIds.includes(product.id)}
-                                                onToggleSelect={onToggleSelectProduct}
-                                                onDrawerOpen={(p) => onProductDrawerOpen(p, category.id)}
-                                                onEdit={(p) => onEditProduct(p, category.id)}
-                                                onDelete={(p) => onDeleteProduct(p, category.id)}
-                                            />
-                                        ))}
-                                    </Table.TBody>
-                                </SortableContext>
+                                <Table.TBody>
+                                    {filteredProducts.map((product) => (
+                                        <SortableProductRow
+                                            key={product.id}
+                                            product={product}
+                                            categoryId={category.id}
+                                            currency={currency}
+                                            isSelectionMode={isSelectionMode}
+                                            isSelected={selectedProductIds.includes(product.id)}
+                                            onToggleSelect={onToggleSelectProduct}
+                                            onDrawerOpen={(p) => onProductDrawerOpen(p, category.id)}
+                                            onEdit={(p) => onEditProduct(p, category.id)}
+                                            onDelete={(p) => onDeleteProduct(p, category.id)}
+                                        />
+                                    ))}
+                                </Table.TBody>
                             </Table>
-                        </DndContext>
+                        </SortableContext>
                     )}
 
                     {/* Category Bottom Actions: Ürün Ekle & Kategori Ekle */}

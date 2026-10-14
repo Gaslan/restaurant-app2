@@ -443,6 +443,202 @@ export async function reorderProduct(
     }
 }
 
+/**
+ * Move a product across categories and/or reorder it using fractional indexing
+ */
+export async function moveAndReorderProduct(
+    restaurantId: string,
+    menuId: string,
+    sourceCategoryId: string,
+    targetCategoryId: string,
+    productId: string,
+    beforeId: string | null,
+    afterId: string | null,
+    orderedProductIds?: string[] | null
+): Promise<Product> {
+    if (sourceCategoryId === targetCategoryId) {
+        return reorderProduct(
+            restaurantId,
+            menuId,
+            sourceCategoryId,
+            productId,
+            beforeId,
+            afterId,
+            orderedProductIds
+        );
+    }
+
+    const db = getFirestoreDb();
+
+    try {
+        const sourceDocRef = db
+            .collection('restaurants')
+            .doc(restaurantId)
+            .collection('menus')
+            .doc(menuId)
+            .collection('categories')
+            .doc(sourceCategoryId)
+            .collection('products')
+            .doc(productId);
+
+        const sourceDoc = await sourceDocRef.get();
+        if (!sourceDoc.exists) {
+            throw new Error(`Product not found in source category: ${productId}`);
+        }
+        const sourceData = sourceDoc.data()!;
+
+        const targetProductsRef = db
+            .collection('restaurants')
+            .doc(restaurantId)
+            .collection('menus')
+            .doc(menuId)
+            .collection('categories')
+            .doc(targetCategoryId)
+            .collection('products');
+
+        // Check before and after positions in target category
+        let beforePosition: string | null = null;
+        let afterPosition: string | null = null;
+
+        if (beforeId) {
+            const beforeDoc = await targetProductsRef.doc(beforeId).get();
+            if (beforeDoc.exists) {
+                const data = beforeDoc.data();
+                if (data && typeof data.position === 'string') {
+                    beforePosition = data.position;
+                }
+            }
+        }
+
+        if (afterId) {
+            const afterDoc = await targetProductsRef.doc(afterId).get();
+            if (afterDoc.exists) {
+                const data = afterDoc.data();
+                if (data && typeof data.position === 'string') {
+                    afterPosition = data.position;
+                }
+            }
+        }
+
+        let newPosition: string | null = null;
+        const canTryFractional =
+            Boolean(beforePosition || afterPosition) &&
+            (!beforePosition || !afterPosition || beforePosition < afterPosition) &&
+            beforePosition !== afterPosition;
+
+        if (canTryFractional) {
+            try {
+                newPosition = generateKeyBetween(beforePosition, afterPosition);
+            } catch (err) {
+                console.warn('generateKeyBetween failed, falling back to full rebalance:', err);
+                newPosition = null;
+            }
+        } else if (!beforeId && !afterId) {
+            const allTargetSnapshot = await targetProductsRef.get();
+            if (allTargetSnapshot.empty) {
+                newPosition = generateKeyBetween(null, null);
+            }
+        }
+
+        const now = new Date();
+        const newProductData: any = {
+            ...sourceData,
+            categoryId: targetCategoryId,
+            updatedAt: now,
+        };
+
+        if (newPosition) {
+            newProductData.position = newPosition;
+
+            const batch = db.batch();
+            // Delete from source category
+            batch.delete(sourceDocRef);
+            // Set in target category
+            const targetDocRef = targetProductsRef.doc(productId);
+            batch.set(targetDocRef, newProductData);
+            await batch.commit();
+
+            return mapProductDoc(productId, newProductData);
+        }
+
+        // --- FALLBACK REBALANCE FOR TARGET CATEGORY ---
+        console.log(`Rebalancing positions for target category ${targetCategoryId} during cross-category move`);
+        const allTargetSnapshot = await targetProductsRef.get();
+        const docsMap = new Map<string, FirebaseFirestore.QueryDocumentSnapshot>();
+        allTargetSnapshot.forEach(doc => docsMap.set(doc.id, doc));
+
+        let finalOrderIds: string[] = [];
+
+        if (orderedProductIds && orderedProductIds.length > 0) {
+            const seen = new Set<string>();
+            for (const id of orderedProductIds) {
+                if (id === productId || docsMap.has(id)) {
+                    finalOrderIds.push(id);
+                    seen.add(id);
+                }
+            }
+            for (const id of docsMap.keys()) {
+                if (!seen.has(id)) {
+                    finalOrderIds.push(id);
+                }
+            }
+        } else {
+            const otherDocs = allTargetSnapshot.docs.filter(d => d.id !== productId);
+            otherDocs.sort((a, b) => {
+                const cmp = comparePositions(a.data().position, b.data().position);
+                if (cmp !== 0) return cmp;
+                return a.id < b.id ? -1 : (a.id > b.id ? 1 : 0);
+            });
+            const otherIds = otherDocs.map(d => d.id);
+            if (beforeId && otherIds.includes(beforeId)) {
+                const bIdx = otherIds.indexOf(beforeId);
+                otherIds.splice(bIdx + 1, 0, productId);
+                finalOrderIds = otherIds;
+            } else if (afterId && otherIds.includes(afterId)) {
+                const aIdx = otherIds.indexOf(afterId);
+                otherIds.splice(aIdx, 0, productId);
+                finalOrderIds = otherIds;
+            } else {
+                finalOrderIds = [productId, ...otherIds];
+            }
+        }
+
+        const keys = generateNKeysBetween(null, null, finalOrderIds.length);
+        const batch = db.batch();
+
+        // Delete from source category
+        batch.delete(sourceDocRef);
+
+        let targetPosition = 'a0';
+        for (let i = 0; i < finalOrderIds.length; i++) {
+            const id = finalOrderIds[i];
+            const targetDocRef = targetProductsRef.doc(id);
+            if (id === productId) {
+                targetPosition = keys[i];
+                batch.set(targetDocRef, {
+                    ...newProductData,
+                    position: keys[i],
+                });
+            } else {
+                batch.update(targetDocRef, {
+                    position: keys[i],
+                    updatedAt: now,
+                });
+            }
+        }
+
+        await batch.commit();
+
+        return mapProductDoc(productId, {
+            ...newProductData,
+            position: targetPosition,
+        });
+    } catch (error) {
+        console.error('Error moving and reordering product in Firestore:', error);
+        throw new Error('Failed to move product');
+    }
+}
+
 export interface PriceBatchUpdateItem {
     restaurantId: string;
     menuId: string;

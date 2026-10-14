@@ -17,6 +17,7 @@ const formatPrice = (price: number, currency = 'TRY') => {
 
 interface SortableProductRowProps {
     product: Product;
+    categoryId: string;
     currency: string;
     isSelectionMode?: boolean;
     isSelected?: boolean;
@@ -28,6 +29,7 @@ interface SortableProductRowProps {
 
 export function SortableProductRow({
     product,
+    categoryId,
     currency,
     isSelectionMode = false,
     isSelected = false,
@@ -43,21 +45,30 @@ export function SortableProductRow({
         transform,
         transition,
         isDragging,
-    } = useSortable({ id: product.id });
+    } = useSortable({
+        id: product.id,
+        data: {
+            type: 'product',
+            product,
+            categoryId,
+        },
+        disabled: isSelectionMode,
+    });
 
     const style = {
-        transform: CSS.Transform.toString(transform),
+        transform: CSS.Translate.toString(transform),
         transition,
-        opacity: isDragging ? 0.5 : 1,
+        opacity: isDragging ? 0.25 : 1,
     };
 
     return (
         <Table.Tr
             ref={setNodeRef}
             style={style}
+            data-product-id={product.id}
             className={classNames(
                 'cursor-pointer md:cursor-default transition-colors hover:bg-gray-50/70 dark:hover:bg-gray-800/50',
-                isDragging ? 'bg-gray-50 dark:bg-gray-800 z-10 relative' : '',
+                isDragging ? 'bg-gray-50/60 dark:bg-gray-800/40 relative' : '',
                 isSelected ? 'bg-primary/5 dark:bg-primary/10' : ''
             )}
             onClick={(e) => {
@@ -171,5 +182,97 @@ export function SortableProductRow({
                 </div>
             </Table.Td>
         </Table.Tr>
+    );
+}
+
+export function ProductDragOverlayItem({
+    product,
+    currency = 'TRY',
+    width,
+}: {
+    product: Product;
+    currency?: string;
+    width?: number | null;
+}) {
+    return (
+        <div
+            style={{ width: width ? `${width}px` : '100%' }}
+            className="bg-white dark:bg-gray-900 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 ring-2 ring-primary/40 overflow-hidden cursor-grabbing select-none"
+        >
+            <Table>
+                <Table.TBody>
+                    <Table.Tr className="bg-white dark:bg-gray-900">
+                        {/* Drag handle */}
+                        <Table.Td className="w-10 p-3">
+                            <div className="p-1 text-primary flex items-center justify-center">
+                                <GripVertical className="h-4 w-4" />
+                            </div>
+                        </Table.Td>
+
+                        {/* Thumbnail */}
+                        <Table.Td className="w-14 p-3">
+                            {product.imageUrl ? (
+                                <div className="relative w-10 h-10 rounded-lg overflow-hidden border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                                    <img
+                                        src={product.imageUrl}
+                                        alt={product.name}
+                                        className="object-cover w-full h-full"
+                                    />
+                                </div>
+                            ) : (
+                                <div className="w-10 h-10 bg-gray-100 dark:bg-gray-800 rounded-lg flex items-center justify-center border border-gray-200 dark:border-gray-700 flex-shrink-0">
+                                    <ImageIcon className="w-5 h-5 text-gray-400" />
+                                </div>
+                            )}
+                        </Table.Td>
+
+                        {/* Name & Description */}
+                        <Table.Td className="p-3">
+                            <div className="font-semibold text-sm heading-text">{product.name}</div>
+                            {product.description && (
+                                <div className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                                    {product.description}
+                                </div>
+                            )}
+                        </Table.Td>
+
+                        {/* Price */}
+                        <Table.Td className="p-3 whitespace-nowrap text-sm font-medium text-gray-700 dark:text-gray-300">
+                            {formatPrice(product.price, currency)}
+                        </Table.Td>
+
+                        {/* Availability */}
+                        <Table.Td className="hidden md:table-cell p-3 whitespace-nowrap">
+                            <Badge
+                                className={classNames(
+                                    'border text-xs',
+                                    product.available ? 'border-green-500' : 'border-gray-400'
+                                )}
+                                content={product.available ? 'Müsait' : 'Tükendi'}
+                                innerClass={classNames(
+                                    'bg-white dark:bg-gray-900',
+                                    product.available ? 'text-green-600 dark:text-green-400' : 'text-gray-400'
+                                )}
+                            />
+                        </Table.Td>
+
+                        {/* Actions */}
+                        <Table.Td className="text-right p-3 whitespace-nowrap">
+                            <div className="hidden md:flex gap-1.5 justify-end items-center opacity-60">
+                                <Button size="xs" icon={<Pencil className="h-3.5 w-3.5" />}>
+                                    Düzenle
+                                </Button>
+                                <Button size="xs" icon={<Trash2 className="h-3.5 w-3.5" />}>
+                                    Sil
+                                </Button>
+                            </div>
+                            <div className="md:hidden flex justify-end">
+                                <ChevronRight className="h-5 w-5 text-muted-foreground" />
+                            </div>
+                        </Table.Td>
+                    </Table.Tr>
+                </Table.TBody>
+            </Table>
+        </div>
     );
 }
