@@ -322,7 +322,7 @@ export default function MenuDetailPage({ params }: MenuDetailPageProps) {
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-4 sm:px-0">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">{menu.name}</h1>
                     <p className="text-muted-foreground">
@@ -330,7 +330,7 @@ export default function MenuDetailPage({ params }: MenuDetailPageProps) {
                     </p>
                 </div>
 
-                <div className="flex flex-row gap-2">
+                <div className="flex flex-row gap-2 overflow-x-auto">
                     <Button
                         size="sm"
                         onClick={() => router.push(`/menus/${menu.id}/settings`)}
@@ -338,14 +338,6 @@ export default function MenuDetailPage({ params }: MenuDetailPageProps) {
                         className="rounded-full"
                     >
                         <span>Görünüm Ayarları</span>
-                    </Button>
-                    <Button
-                        size="sm"
-                        onClick={() => router.push(`/settings/qr-code?menuId=${menu.id}`)}
-                        icon={<QrCode className="h-4 w-4" />}
-                        className="rounded-full"
-                    >
-                        <span>QR Kod</span>
                     </Button>
                     <Button
                         variant="solid"
@@ -361,23 +353,25 @@ export default function MenuDetailPage({ params }: MenuDetailPageProps) {
 
             {/* Categories Table */}
             {!menu.categories || menu.categories.length === 0 ? (
-                <div className="text-center py-12 border rounded-lg">
-                    <h3 className="text-lg font-semibold mb-2">Bu menüde henüz kategori yok</h3>
-                    <p className="text-muted-foreground mb-4">
-                        Müşterilerinize ürünlerinizi sunmak için önce kategoriler oluşturmalısınız. (Örn: Çorbalar, Ana Yemekler)
-                    </p>
-                    <Button
-                        variant="solid"
-                        onClick={() => setCategoryDialog({ open: true })}
-                        className="w-full md:w-auto rounded-full"
-                        icon={<Plus className="h-4 w-4" />}
-                    >
-                        <span>İlk Kategoriyi Ekle</span>
-                    </Button>
+                <div className="px-4 sm:px-0">
+                    <div className="text-center py-12 px-4 border border-gray-200 rounded-lg">
+                        <h3 className="text-lg font-semibold mb-2">Bu menüde henüz kategori yok</h3>
+                        <p className="text-muted-foreground mb-4">
+                            Müşterilerinize ürünlerinizi sunmak için önce kategoriler oluşturmalısınız. (Örn: Çorbalar, Ana Yemekler)
+                        </p>
+                        <Button
+                            variant="solid"
+                            onClick={() => setCategoryDialog({ open: true })}
+                            className="w-full md:w-auto rounded-full"
+                            icon={<Plus className="h-4 w-4" />}
+                        >
+                            <span>İlk Kategoriyi Ekle</span>
+                        </Button>
+                    </div>
                 </div>
             ) : (
                 <div className="border-0 rounded-lg">
-                    <AdaptiveCard>
+                    <AdaptiveCard className="rounded-none sm:rounded-lg border-0 sm:border" bodyClass="px-0 sm:px-5">
                         <DndContext
                             sensors={sensors}
                             collisionDetection={closestCenter}

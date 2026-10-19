@@ -309,26 +309,7 @@ export function MenuSettingsView({ menuId }: MenuSettingsViewProps) {
             {/* Header & Breadcrumb */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-200 dark:border-gray-800">
                 <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-xs text-gray-500">
-                        <Link href="/menus" className="hover:text-primary transition-colors">
-                            Menüler
-                        </Link>
-                        <span>/</span>
-                        <Link href={`/menus/${menuId}`} className="hover:text-primary transition-colors">
-                            {menu.name}
-                        </Link>
-                        <span>/</span>
-                        <span className="text-gray-900 dark:text-gray-100 font-medium">Görünüm Ayarları</span>
-                    </div>
                     <div className="flex items-center gap-3 pt-1">
-                        <button
-                            type="button"
-                            onClick={() => router.push(`/menus/${menuId}`)}
-                            className="p-2 rounded-xl border border-gray-200 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors text-gray-600 dark:text-gray-300"
-                            title="Geri Dön"
-                        >
-                            <ArrowLeft className="w-4 h-4" />
-                        </button>
                         <div>
                             <h1 className="text-2xl font-bold tracking-tight heading-text">
                                 {menu.name} - Görünüm Ayarları

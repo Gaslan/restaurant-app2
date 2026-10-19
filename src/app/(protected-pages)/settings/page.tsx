@@ -11,7 +11,7 @@ export const metadata: Metadata = {
 export default function SettingsPage() {
     return (
         <div className="w-full min-h-full bg-[#f4f5f6]">
-            <Container className="bg-[#f4f5f6]">
+            <Container className="bg-[#f4f5f6] px-4">
                 <SettingsView />
             </Container>
         </div>

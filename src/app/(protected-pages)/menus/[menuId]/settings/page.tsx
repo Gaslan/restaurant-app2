@@ -16,7 +16,7 @@ export default async function MenuSettingsPage({
     const { menuId } = await params;
 
     return (
-        <div className="w-full">
+        <div className="w-full px-4 sm:px-0">
             <Suspense
                 fallback={
                     <div className="flex items-center justify-center h-64">

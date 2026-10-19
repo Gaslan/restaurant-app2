@@ -366,7 +366,7 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
     return (
         <div className="space-y-6">
             {/* Header */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-4 sm:px-0">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">{category.name}</h1>
                     <p className="text-muted-foreground">
@@ -389,28 +389,30 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
 
             {/* Products Table */}
             {category.products.length === 0 ? (
-                <div className="text-center py-12 border rounded-lg">
-                    <h3 className="text-lg font-semibold mb-2">Bu kategoride henüz ürün yok</h3>
-                    <p className="text-muted-foreground mb-4">
-                        Müşterilerinize sunmak için bu kategoriye ilk ürününüzü ekleyin.
-                    </p>
-                    <Button
-                        variant="solid"
-                        onClick={() => setProductDrawer({ open: true })}
-                        className="w-full md:w-auto rounded-full"
-                        icon={<Plus className="h-4 w-4" />}
-                    >
-                        <span>İlk Ürünü Ekle</span>
-                    </Button>
+                <div className="px-4 sm:px-0">
+                    <div className="text-center py-12 px-4 border border-gray-200 rounded-lg">
+                        <h3 className="text-lg font-semibold mb-2">Bu kategoride henüz ürün yok</h3>
+                        <p className="text-muted-foreground mb-4">
+                            Müşterilerinize sunmak için bu kategoriye ilk ürününüzü ekleyin.
+                        </p>
+                        <Button
+                            variant="solid"
+                            onClick={() => setProductDrawer({ open: true })}
+                            className="w-full md:w-auto rounded-full"
+                            icon={<Plus className="h-4 w-4" />}
+                        >
+                            <span>İlk Ürünü Ekle</span>
+                        </Button>
+                    </div>
                 </div>
             ) : (
                 <div className="border-0 rounded-lg">
-                    <AdaptiveCard>
+                    <AdaptiveCard className="rounded-none sm:rounded-lg border-0 sm:border" bodyClass="px-0 sm:px-5">
                         <div className="mb-4 flex flex-col md:flex-row gap-3 justify-between items-center">
                             <p className="text-sm text-muted-foreground m-0">
                                 {displayProducts.length} ürün listeleniyor.
                             </p>
-                            <div className="flex items-center gap-2 w-full md:w-auto">
+                            <div className="flex items-center gap-2 w-full md:w-auto px-4 sm:px-0">
                                 <div className="relative w-full md:w-64">
                                     <Input
                                         placeholder="Ürün ara..."
@@ -434,10 +436,12 @@ export default function CategoryDetailPage({ params }: CategoryDetailPageProps) 
                         </div>
 
                         {displayProducts.length === 0 ? (
-                            <div className="text-center py-12 border rounded-lg">
-                                <p className="text-muted-foreground">
-                                    Arama kriterlerinize uygun ürün bulunamadı.
-                                </p>
+                            <div className="px-4 sm:px-0">
+                                <div className="text-center py-12 border border-gray-200 rounded-lg">
+                                    <p className="text-muted-foreground">
+                                        Arama kriterlerinize uygun ürün bulunamadı.
+                                    </p>
+                                </div>
                             </div>
                         ) : (
                             <DndContext

@@ -158,7 +158,7 @@ export default function MenusPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-4 sm:px-0">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Menus</h1>
                     <p className="text-muted-foreground">
@@ -171,18 +171,20 @@ export default function MenusPage() {
             </div>
 
             {menus.length === 0 ? (
-                <div className="text-center py-12 border rounded-lg">
-                    <h3 className="text-lg font-semibold mb-2">No menus yet</h3>
-                    <p className="text-muted-foreground mb-4">
-                        Get started by creating your first menu
-                    </p>
-                    <Button onClick={openCreateDialog} icon={<Plus className="h-4 w-4" />} className="w-full md:w-auto rounded-full">
-                        <span>Create Menu</span>
-                    </Button>
+                <div className="px-4 sm:px-0">
+                    <div className="text-center py-12 px-4 border border-gray-200 rounded-lg">
+                        <h3 className="text-lg font-semibold mb-2">No menus yet</h3>
+                        <p className="text-muted-foreground mb-4">
+                            Get started by creating your first menu
+                        </p>
+                        <Button onClick={openCreateDialog} icon={<Plus className="h-4 w-4" />} className="w-full md:w-auto rounded-full">
+                            <span>Create Menu</span>
+                        </Button>
+                    </div>
                 </div>
             ) : (
                 <div className="border-0 rounded-lg">
-                    <AdaptiveCard>
+                    <AdaptiveCard className="rounded-none sm:rounded-lg border-0 sm:border" bodyClass="px-0 sm:px-5">
 
                         <Table>
                             <Table.THead>
